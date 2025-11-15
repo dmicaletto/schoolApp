@@ -882,7 +882,7 @@
         async function callGeminiApi(subject, description) {
             isAiCallPending = true;
 
-            const systemPrompt = `Sei un assistente tutor (per una studentessa di scuola media o superiore in Italia).
+            const systemPrompt = `Sei un assistente tutor (per una studentessa di Liceo Scientifico in Italia).
 Rispondi sempre in italiano.
 Il tuo compito è analizzare il compito assegnato e fornire supporto.
 Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li> e grassetto <strong>).
@@ -1028,7 +1028,7 @@ ${tasksForWeek.join('\n')}
 Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispetti i miei impegni fissi e mi permetta di completare i compiti in tempo.`;
 
             // 4. Chiama l'API (SENZA Google Search)
-            const apiKey = "";
+            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             const payload = {
