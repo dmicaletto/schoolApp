@@ -278,8 +278,6 @@
         
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Inizializzazione Firebase ---
