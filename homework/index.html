@@ -265,6 +265,14 @@
         let confirmCallback = null; // Funzione da eseguire alla conferma
 
         // Configurazione Firebase (iniettata dall'ambiente)
+        const __firebase_config = {
+            apiKey: "AIzaSyCfTXY1foD8Dr9UxRNzLeOu680aNtIw4TA",
+            authDomain: "homework-s234f.firebaseapp.com",
+            projectId: "homework-s234f",
+            storageBucket: "training-c0b76.firebasestorage.app",
+            messagingSenderId: "149618028951",
+            appId: "1:149618028951:web:03756bdf1273a4521954d2"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
