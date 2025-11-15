@@ -263,18 +263,25 @@
         // Modal Conferma
         const confirmModalEl = document.getElementById('confirmModal');
         let confirmCallback = null; // Funzione da eseguire alla conferma
-
-        // Configurazione Firebase (iniettata dall'ambiente)
-        const __firebase_config = {
-            apiKey: "AIzaSyCfTXY1foD8Dr9UxRNzLeOu680aNtIw4TA",
-            authDomain: "homework-s234f.firebaseapp.com",
-            projectId: "homework-s234f",
-            storageBucket: "training-c0b76.firebasestorage.app",
-            messagingSenderId: "149618028951",
-            appId: "1:149618028951:web:03756bdf1273a4521954d2"
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "firebase/app";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyCfTXY1foD8Dr9UxRNzLeOu680aNtIw4TA",
+          authDomain: "training-c0b76.firebaseapp.com",
+          projectId: "training-c0b76",
+          storageBucket: "training-c0b76.firebasestorage.app",
+          messagingSenderId: "149618028951",
+          appId: "1:149618028951:web:eca42664d47ab6d71954d2"
         };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Inizializzazione Firebase ---
