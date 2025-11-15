@@ -81,6 +81,23 @@
             max-width: 350px;
             text-align: center;
         }
+        
+        /* Stile per il contenuto del modal AI (per formattare la risposta) */
+        #aiModalContent p {
+            margin-bottom: 0.75rem; /* 12px */
+            line-height: 1.6;
+        }
+        #aiModalContent ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-bottom: 0.75rem;
+        }
+        #aiModalContent li {
+            margin-bottom: 0.25rem; /* 4px */
+        }
+        #aiModalContent strong {
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -163,12 +180,12 @@
         </div>
     </div>
 
-    <!-- 4. Modal per Visualizzare l'Orario (NUOVO) -->
+    <!-- 4. Modal per Visualizzare l'Orario -->
     <div id="viewTimetableModal" class="modal">
         <div class="modal-content max-w-3xl"> <!-- Reso più largo per l'orario -->
             <h2 class="text-lg font-semibold mb-4">Orario Settimanale</h2>
             
-            <!-- MODIFICA: Aggiunto overflow-x-auto per lo swipe/scorrimento orizzontale -->
+            <!-- Aggiunto overflow-x-auto per lo swipe/scorrimento orizzontale -->
             <div id="viewTimetableModalContent" class="max-h-[70vh] overflow-x-auto overflow-y-auto">
                 <!-- Il contenuto dell'orario (la tabella) verrà generato qui da JS -->
             </div>
@@ -187,6 +204,23 @@
             <div class="flex justify-center gap-4">
                 <button id="confirmCancel" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
                 <button id="confirmOk" class="px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">Elimina</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 6. Modal Assistente AI (NUOVO) -->
+    <div id="aiModal" class="modal" style="z-index: 60;">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-blue-600">Assistente AI</h2>
+                <button id="closeAiModalButton" class="p-2 rounded-full hover:bg-gray-100">
+                    <span data-lucide="X" class="w-5 h-5 text-gray-600"></span>
+                </button>
+            </div>
+            
+            <!-- Contenuto generato dall'AI -->
+            <div id="aiModalContent" class="max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
+                <!-- Il caricamento o il contenuto AI appariranno qui -->
             </div>
         </div>
     </div>
@@ -225,6 +259,7 @@
         let currentWeekStart = getStartOfWeek(new Date());
         let allTasks = {}; // Cache locale dei compiti
         let taskUnsubscribe = null; // Funzione per staccare il listener di Firestore
+        let isAiCallPending = false; // Evita chiamate multiple all'AI
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -245,28 +280,20 @@
         // Modal Conferma
         const confirmModalEl = document.getElementById('confirmModal');
         let confirmCallback = null; // Funzione da eseguire alla conferma
+        
+        // Modal AI (NUOVO)
+        const aiModalEl = document.getElementById('aiModal');
+        const aiModalContentEl = document.getElementById('aiModalContent');
+        const closeAiModalButtonEl = document.getElementById('closeAiModalButton');
 
         // Configurazione Firebase (iniettata dall'ambiente)
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // --- NUOVA LOGICA: Orario Fisso ---
+        // --- LOGICA ORARIO FISSO ---
         const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
         
-        // Ore per ciascun giorno (8-9, 9-10, ...)
         const TIMETABLE_HOURS_MAP = {
             mon: [8, 9, 10, 11, 12], // 5 ore
             tue: [8, 9, 10, 11, 12, 13], // 6 ore
@@ -275,7 +302,6 @@
             fri: [8, 9, 10, 11, 12]  // 5 ore
         };
 
-        // Orario fisso con materie
         const FIXED_TIMETABLE = {
             mon: ["Latino", "Matematica", "Matematica", "Inglese", "Italiano"],
             tue: ["Italiano", "Motoria", "Matematica", "Matematica", "Italiano", "Scienze"],
@@ -300,10 +326,8 @@
                     if (user) {
                         console.log("Utente autenticato:", user.uid);
                         userId = user.uid;
-                        // L'utente è loggato, ora possiamo caricare i suoi dati
                         await loadUserData();
                     } else {
-                        // L'utente non è loggato, esegui l'autenticazione
                         console.log("Nessun utente, tentativo di autenticazione...");
                         try {
                             if (initialAuthToken) {
@@ -323,27 +347,17 @@
             }
         }
 
-        // Carica tutti i dati dell'utente (solo compiti)
         async function loadUserData() {
             if (!userId) return;
-
-            // Nascondi lo spinner principale
             loadingSpinner.style.display = 'none';
             weekGridEl.style.display = 'block';
-
-            // 1. Renderizza la settimana (userà l'orario fisso)
             renderWeekDisplay(currentWeekStart);
-
-            // 2. Collega il listener per i compiti
             await attachTaskListener();
         }
 
         // --- Funzioni Orario (Logica di Visualizzazione) ---
         
-        // Popola e apre il modal di visualizzazione dell'orario
         function openTimetableModal() {
-            // MODIFICA: Logica completamente riscritta per generare una tabella
-            
             const hours = [8, 9, 10, 11, 12, 13]; // Ore massime (fino alle 14:00)
             const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
             
@@ -353,46 +367,26 @@
                         <tr>
                             <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ora</th>
             `;
-            
-            // Intestazioni dei giorni
             days.forEach(dayKey => {
                 tableHtml += `<th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">${dayNames[dayKey]}</th>`;
             });
+            tableHtml += `</tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
             
-            tableHtml += `
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-            `;
-            
-            // Righe delle ore
             hours.forEach((hour, hourIndex) => {
-                // Aggiungi colori di riga alternati
                 tableHtml += `<tr class="even:bg-gray-50">`;
-                
-                // Cella dell'ora
                 tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-800">${hour}:00 - ${hour+1}:00</td>`;
                 
-                // Cella per ogni giorno
                 days.forEach(dayKey => {
-                    // Trova la materia per questo giorno a questa ora (indice)
                     const subject = FIXED_TIMETABLE[dayKey][hourIndex];
-                    
                     if (subject) {
                         tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${subject}</td>`;
                     } else {
-                        // Giorno corto (es. Lunedì alle 13:00 non ha lezioni)
                         tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-400">-</td>`;
                     }
                 });
-                
                 tableHtml += `</tr>`;
             });
-            
-            tableHtml += `
-                    </tbody>
-                </table>
-            `;
+            tableHtml += `</tbody></table>`;
             
             viewTimetableModalContentEl.innerHTML = tableHtml;
             viewTimetableModalEl.style.display = 'flex';
@@ -402,11 +396,9 @@
             viewTimetableModalEl.style.display = 'none';
         }
 
-        // Genera l'HTML dell'orario per la colonna del giorno (raggruppando le ore)
         function generateTimetableHTML(dayKey) {
             const hours = TIMETABLE_HOURS_MAP[dayKey];
             const subjects = FIXED_TIMETABLE[dayKey];
-
             if (!hours || !subjects) return '<p class="text-xs text-gray-400 italic">Orario non definito</p>';
             
             let htmlEntries = [];
@@ -414,44 +406,31 @@
             while (i < subjects.length) {
                 let subject = subjects[i];
                 let startHour = hours[i];
-
                 let j = i + 1;
-                // Guarda avanti per trovare ore consecutive con la stessa materia
                 while (j < subjects.length && subjects[j] === subject) {
                     j++;
                 }
-                
-                // j è ora all'indice della prima ora diversa (o alla fine)
-                // L'ora finale è l'ora dell'ultimo blocco + 1
                 let endHour = hours[j - 1] + 1; 
-                
                 htmlEntries.push(`<p class="text-xs text-gray-800 font-semibold">${startHour}:00 - ${endHour}:00: <span class="font-medium">${subject}</span></p>`);
-                
-                i = j; // Salta al prossimo blocco di materie
+                i = j;
             }
-
-            if (htmlEntries.length === 0) {
-                return '<p class="text-xs text-gray-400 italic">Nessun orario impostato</p>';
-            }
+            if (htmlEntries.length === 0) return '<p class="text-xs text-gray-400 italic">Nessun orario impostato</p>';
             return htmlEntries.join('\n');
         }
 
 
         // --- Funzioni Gestione Compiti (Tasks) ---
 
-        // Si collega a Firestore e ascolta le modifiche ai compiti
         function attachTaskListener() {
-            if (taskUnsubscribe) taskUnsubscribe(); // Stacca listener precedente
-            
+            if (taskUnsubscribe) taskUnsubscribe();
             const tasksCollectionRef = collection(db, "artifacts", appId, "users", userId, "tasks");
             
             taskUnsubscribe = onSnapshot(tasksCollectionRef, (querySnapshot) => {
                 console.log("Dati compiti ricevuti.");
-                allTasks = {}; // Svuota la cache locale
+                allTasks = {};
                 querySnapshot.forEach((doc) => {
                     allTasks[doc.id] = doc.data();
                 });
-                // Ridisegna la settimana corrente con i nuovi dati
                 renderWeekDisplay(currentWeekStart); 
             }, (error) => {
                 console.error("Errore nel listener dei compiti:", error);
@@ -459,11 +438,9 @@
             });
         }
 
-        // Salva (o aggiorna) un compito
         async function handleSaveTask(e) {
             e.preventDefault();
             if (!userId) return;
-
             const id = taskIdEl.value;
             const taskData = {
                 subject: taskFormEl.subject.value,
@@ -474,23 +451,19 @@
             
             try {
                 if (id) {
-                    // Aggiorna compito esistente
                     const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
                     await updateDoc(taskDocRef, taskData);
                 } else {
-                    // Crea nuovo compito
                     const tasksCollectionRef = collection(db, "artifacts", appId, "users", userId, "tasks");
                     await addDoc(tasksCollectionRef, taskData);
                 }
                 closeModal();
-                // Il listener onSnapshot aggiornerà automaticamente la UI
             } catch (error) {
                 console.error("Errore salvataggio compito:", error);
                 showError("Impossibile salvare il compito.");
             }
         }
 
-        // Apre il modal per modificare un compito
         function handleEditTask(id) {
             const task = allTasks[id];
             if (!task) return;
@@ -498,56 +471,45 @@
             modalTitleEl.innerText = "Modifica Compito";
             taskIdEl.value = id;
             
-            // Popola prima il dropdown in base alla data del compito
             populateSubjectDropdown(task.dueDate);
             
-            // Ora imposta i valori
             taskFormEl.subject.value = task.subject;
             taskFormEl.description.value = task.description;
             taskFormEl.dueDate.value = task.dueDate;
 
-            // Gestione speciale: se la materia del compito non è PIÙ nell'orario
-            // di quel giorno, la aggiungiamo manualmente al dropdown
             const subjectSelectEl = document.getElementById('subject');
             if (task.subject && !subjectSelectEl.querySelector(`option[value="${task.subject}"]`)) {
                 const oldOption = document.createElement('option');
                 oldOption.value = task.subject;
                 oldOption.textContent = `${task.subject} (vecchia)`;
                 subjectSelectEl.appendChild(oldOption);
-                // E la riselezioniamo
                 taskFormEl.subject.value = task.subject;
             }
-
             modalEl.style.display = 'flex';
         }
 
-        // Aggiorna lo stato "completato" di un compito
         async function handleToggleTask(id, completed) {
             if (!userId) return;
             try {
                 const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
                 await updateDoc(taskDocRef, { completed: completed });
-                // Il listener aggiornerà la UI
             } catch (error) {
                 console.error("Errore aggiornamento compito:", error);
                 showError("Impossibile aggiornare il compito.");
             }
         }
 
-        // Mostra il popup di conferma prima di eliminare
         function handleDeleteTask(id) {
             showConfirm("Sei sicuro di voler eliminare questo compito?", () => {
                 performDeleteTask(id);
             });
         }
 
-        // Esegue l'eliminazione effettiva
         async function performDeleteTask(id) {
             if (!userId) return;
             try {
                 const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
                 await deleteDoc(taskDocRef);
-                // Il listener aggiornerà la UI
             } catch (error) {
                 console.error("Errore eliminazione compito:", error);
                 showError("Impossibile eliminare il compito.");
@@ -557,40 +519,27 @@
 
         // --- Funzioni di Rendering UI ---
 
-        // Disegna l'intera griglia settimanale
         function renderWeekDisplay(startDate) {
-            if (!weekScrollContainerEl) return; // Assicurati che l'elemento esista
-            
-            weekScrollContainerEl.innerHTML = ''; // Pulisci la griglia
+            if (!weekScrollContainerEl) return;
+            weekScrollContainerEl.innerHTML = '';
             currentWeekDisplayEl.textContent = formatWeekRange(startDate);
-
-            const days = getWeekDays(startDate); // Ottiene i 5 giorni (Lun-Ven)
+            const days = getWeekDays(startDate);
 
             for (const day of days) {
                 const dateStr = formatDate(day.date);
-                const dayKey = day.value.toLowerCase().substring(0, 3); // 'mon', 'tue', ecc.
-                
-                // Genera l'HTML per l'orario di questo giorno (dall'orario fisso)
+                const dayKey = day.value.toLowerCase().substring(0, 3);
                 const timetableHtml = generateTimetableHTML(dayKey);
-
                 const dayCard = document.createElement('div');
                 dayCard.className = 'day-column bg-white rounded-xl shadow-sm p-3 flex flex-col';
                 dayCard.id = `day-${dateStr}`;
-                
                 dayCard.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-base font-semibold text-gray-800">${day.name}</h2>
                         <span class="text-sm font-medium text-gray-500">${day.date.getDate()}</span>
                     </div>
-                    
-                    <!-- Sezione Orario -->
                     <div class="border-t border-gray-100 my-2"></div>
                     <h3 class="font-semibold text-sm text-gray-500 mb-1">Orario</h3>
-                    <div class="timetable-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[40px]">
-                        ${timetableHtml}
-                    </div>
-
-                    <!-- Sezione Compiti -->
+                    <div class="timetable-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[40px]">${timetableHtml}</div>
                     <div class="border-t border-gray-100 my-2"></div>
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-semibold text-sm text-gray-500">Compiti</h3>
@@ -598,35 +547,24 @@
                             <span data-lucide="plus" class="w-4 h-4"></span>
                         </button>
                     </div>
-                    <div id="task-list-${dateStr}" class="task-list space-y-2 mt-2 flex-1 overflow-y-auto">
-                        <!-- I compiti per questo giorno verranno inseriti qui -->
-                    </div>
-                `;
+                    <div id="task-list-${dateStr}" class="task-list space-y-2 mt-2 flex-1 overflow-y-auto"></div>`;
                 weekScrollContainerEl.appendChild(dayCard);
             }
             
-            // Collega gli eventi ai nuovi pulsanti "+"
             weekScrollContainerEl.querySelectorAll('.add-task-to-day-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const date = e.currentTarget.dataset.date;
-                    openModal(date); // Passa la data alla funzione openModal
+                    openModal(date);
                 });
             });
 
-            // Popola i compiti
             populateTasksForWeek(days);
-            
-            // Inizializza le icone Lucide
             lucide.createIcons();
         }
 
-        // Popola le liste dei compiti per la settimana visibile
         function populateTasksForWeek(days) {
-            // Pulisci tutte le liste prima di ripopolare
             document.querySelectorAll('.task-list').forEach(list => list.innerHTML = '');
-
             const dateStrings = days.map(day => formatDate(day.date));
-
             for (const id in allTasks) {
                 const task = allTasks[id];
                 if (dateStrings.includes(task.dueDate)) {
@@ -635,10 +573,9 @@
             }
         }
 
-        // Disegna un singolo compito nella colonna corretta
         function renderTask(id, data) {
             const taskListContainer = document.getElementById(`task-list-${data.dueDate}`);
-            if (!taskListContainer) return; // Giorno non visibile
+            if (!taskListContainer) return;
 
             const taskEl = document.createElement('div');
             taskEl.id = `task-${id}`;
@@ -663,26 +600,32 @@
             `;
             contentDiv.addEventListener('click', () => handleEditTask(id));
             
+            // --- Pulsanti Azione (AI e Elimina) ---
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'flex flex-col sm:flex-row gap-1 ml-auto';
+
+            // Pulsante Assistente AI (NUOVO)
+            const aiButton = document.createElement('button');
+            aiButton.className = 'p-1 rounded-full hover:bg-blue-100';
+            aiButton.title = 'Assistente AI'; // Tooltip
+            aiButton.innerHTML = `<span data-lucide="Sparkles" class="text-blue-500 hover:text-blue-700" width="16" height="16"></span>`;
+            aiButton.addEventListener('click', () => openAiModal(data.subject, data.description));
+            
             // Pulsante Elimina
             const deleteButton = document.createElement('button');
-            deleteButton.className = 'p-1 rounded-full hover:bg-red-100 ml-auto';
+            deleteButton.className = 'p-1 rounded-full hover:bg-red-100';
+            deleteButton.title = 'Elimina'; // Tooltip
+            deleteButton.innerHTML = `<span data-lucide="Trash2" class="text-red-500 hover:text-red-700" width="16" height="16"></span>`;
             deleteButton.addEventListener('click', () => handleDeleteTask(id));
-            
-            // Icona SVG (metodo robusto)
-            const trashIconSpan = document.createElement('span');
-            trashIconSpan.setAttribute('data-lucide', 'Trash2');
-            trashIconSpan.setAttribute('class', 'text-red-500 hover:text-red-700');
-            trashIconSpan.setAttribute('width', 16);
-            trashIconSpan.setAttribute('height', 16);
-            deleteButton.appendChild(trashIconSpan);
+
+            actionsDiv.appendChild(aiButton);
+            actionsDiv.appendChild(deleteButton);
 
             taskEl.appendChild(checkbox);
             taskEl.appendChild(contentDiv);
-            taskEl.appendChild(deleteButton);
+            taskEl.appendChild(actionsDiv);
 
             taskListContainer.appendChild(taskEl);
-            
-            // Chiede a Lucide di renderizzare l'icona appena aggiunta
             lucide.createIcons({ nodes: [taskEl] });
         }
 
@@ -691,23 +634,17 @@
         function populateSubjectDropdown(dateStr) {
             const subjectSelectEl = document.getElementById('subject');
             subjectSelectEl.innerHTML = '<option value="">-- Seleziona Materia --</option>';
-
-            if (!dateStr) return; // Non c'è data, non fare nulla
+            if (!dateStr) return;
 
             try {
-                // 'sun' (0), 'mon' (1), ...
-                const dateObj = new Date(dateStr + 'T12:00:00'); // Evita problemi TZ
+                const dateObj = new Date(dateStr + 'T12:00:00');
                 const dayOfWeek = dateObj.getDay(); 
                 const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayOfWeek];
+                if (!dayKey || dayKey === 'sun' || dayKey === 'sat') return;
 
-                if (!dayKey || dayKey === 'sun' || dayKey === 'sat') return; // Giorno non valido
-
-                // Prende le materie dall'orario fisso
                 const daySubjects = FIXED_TIMETABLE[dayKey] || [];
-                
-                // Rimuovi duplicati
                 const uniqueSubjects = [...new Set(daySubjects)];
-                uniqueSubjects.sort(); // Ordina alfabeticamente
+                uniqueSubjects.sort();
 
                 uniqueSubjects.forEach(subject => {
                     const option = document.createElement('option');
@@ -724,22 +661,12 @@
 
         // --- Funzioni Modal (Finestre Popup) ---
 
-        // Apre il modal dei compiti (con data pre-impostata)
         function openModal(defaultDate = null) {
             taskFormEl.reset();
             modalTitleEl.innerText = "Nuovo Compito";
             taskIdEl.value = '';
-            
-            if (defaultDate) {
-                taskFormEl.dueDate.value = defaultDate;
-            } else {
-                // Fallback (non dovrebbe servire con i nuovi pulsanti +)
-                taskFormEl.dueDate.value = formatDate(new Date());
-            }
-            
-            // Popola il dropdown delle materie in base alla data
+            taskFormEl.dueDate.value = defaultDate ? defaultDate : formatDate(new Date());
             populateSubjectDropdown(defaultDate);
-            
             modalEl.style.display = 'flex';
         }
 
@@ -747,7 +674,6 @@
             modalEl.style.display = 'none';
         }
         
-        // Apre il modal di conferma
         function showConfirm(message, callback) {
             document.getElementById('confirmMessage').innerText = message;
             confirmCallback = callback;
@@ -759,54 +685,125 @@
             confirmCallback = null;
         }
 
+        // --- Funzioni Assistente AI (NUOVE) ---
+
+        function openAiModal(subject, description) {
+            if (isAiCallPending) return; // Evita clic multipli
+            
+            aiModalEl.style.display = 'flex';
+            aiModalContentEl.innerHTML = `
+                <div class="flex items-center justify-center p-4">
+                    <span data-lucide="Loader" class="w-6 h-6 text-blue-500 animate-spin"></span>
+                    <p class="ml-3 text-gray-600">L'assistente sta cercando informazioni...</p>
+                </div>
+            `;
+            lucide.createIcons({ nodes: [aiModalContentEl] });
+
+            callGeminiApi(subject, description);
+        }
+
+        function closeAiModal() {
+            aiModalEl.style.display = 'none';
+            aiModalContentEl.innerHTML = ''; // Pulisci contenuto
+        }
+
+        async function callGeminiApi(subject, description) {
+            isAiCallPending = true;
+
+            const systemPrompt = `Sei un assistente tutor (per una studentessa di scuola media o superiore in Italia).
+Rispondi sempre in italiano.
+Il tuo compito è analizzare il compito assegnato e fornire supporto.
+Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li> e grassetto <strong>).
+
+La tua risposta deve essere strutturata in 2 parti:
+1.  **Breve Spiegazione:** Una spiegazione concisa (massimo 2-3 frasi) dell'argomento principale.
+2.  **Consigli Pratici:** Una lista puntata (massimo 3-4 punti) con consigli pratici e specifici per *come* svolgere quel compito.`;
+            
+            const userQuery = `Il mio compito è:
+- Materia: ${subject}
+- Descrizione: ${description}
+
+Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggiornate (usa la ricerca se necessario).`;
+            
+            const apiKey = ""; // Lasciato vuoto come da istruzioni
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }], // Attiva Google Search
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    let text = result.candidates[0].content.parts[0].text;
+                    
+                    // Sostituzioni di base per rendere l'HTML più pulito (Gemini a volte usa Markdown)
+                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Grassetto
+                    text = text.replace(/ \*(.*?)/g, '<li>$1</li>'); // Voci elenco
+                    
+                    aiModalContentEl.innerHTML = text;
+                } else {
+                    aiModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato una risposta valida. Riprova.</p>';
+                }
+
+            } catch (error) {
+                console.error("Errore chiamata AI:", error);
+                aiModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel contattare l'assistente: ${error.message}</p>`;
+            } finally {
+                isAiCallPending = false;
+            }
+        }
+
 
         // --- Funzioni Utilità (Date, Errori) ---
 
-        // Trova il Lunedì della settimana corrente
         function getStartOfWeek(date) {
             const d = new Date(date);
-            const day = d.getDay(); // 0 = Domenica, 1 = Lunedì, ...
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Se è Dom (0), vai indietro di 6, altrimenti vai a Lun (1)
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
             return new Date(d.setDate(diff));
         }
 
-        // Ritorna un array di 5 oggetti {name, date, value} da Lunedì a Venerdì
         function getWeekDays(startDate) {
             const days = [];
             const d = new Date(startDate);
             const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì'];
             const dayValues = ['mon', 'tue', 'wed', 'thu', 'fri'];
-            
             for (let i = 0; i < 5; i++) {
-                days.push({
-                    name: dayNames[i],
-                    date: new Date(d),
-                    value: dayValues[i]
-                });
+                days.push({ name: dayNames[i], date: new Date(d), value: dayValues[i] });
                 d.setDate(d.getDate() + 1);
             }
             return days;
         }
 
-        // Formatta una data come "YYYY-MM-DD"
         function formatDate(date) {
             return date.toISOString().split('T')[0];
         }
 
-        // Formatta l'intestazione della settimana (es. "10 Nov - 14 Nov")
         function formatWeekRange(startDate) {
             const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 4); // 4 giorni dopo Lunedì è Venerdì
-            
+            endDate.setDate(startDate.getDate() + 4);
             const startStr = startDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
             const endStr = endDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-            
             return `${startStr} - ${endStr}`;
         }
         
-        // Mostra un semplice messaggio di errore (da migliorare)
         function showError(message) {
-            // Sostituisce lo spinner con un errore se il caricamento fallisce
             if(loadingSpinner.style.display !== 'none') {
                 loadingSpinner.innerHTML = `<div class="text-center text-red-600">
                     <span data-lucide="AlertTriangle" class="w-12 h-12 mx-auto"></span>
@@ -814,7 +811,7 @@
                 </div>`;
                 lucide.createIcons();
             }
-            console.error(message); // Logga anche in console
+            console.error(message);
         }
 
         // --- Collegamento Eventi UI ---
@@ -823,15 +820,14 @@
             // Navigazione Settimana
             document.getElementById('prevWeekBtn').addEventListener('click', () => {
                 currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-                renderWeekDisplay(currentWeekStart); // Ridisegna con la cache locale (veloce)
+                renderWeekDisplay(currentWeekStart);
             });
 
             document.getElementById('nextWeekBtn').addEventListener('click', () => {
                 currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-                renderWeekDisplay(currentWeekStart); // Ridisegna con la cache locale (veloce)
+                renderWeekDisplay(currentWeekStart);
             });
             
-            // Pulsante Oggi (Aggiunto)
             document.getElementById('todayBtn').addEventListener('click', () => {
                 currentWeekStart = getStartOfWeek(new Date());
                 renderWeekDisplay(currentWeekStart);
@@ -854,6 +850,9 @@
                 }
                 closeConfirm();
             });
+            
+            // Modal AI (NUOVO)
+            closeAiModalButtonEl.addEventListener('click', closeAiModal);
 
             // Avvia l'app
             initializeFirebase();
