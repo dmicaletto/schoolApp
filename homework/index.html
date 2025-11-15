@@ -81,22 +81,6 @@
             max-width: 350px;
             text-align: center;
         }
-
-        /* Stili per i campi di input dell'orario */
-        .timetable-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #D1D5DB; /* gray-300 */
-            border-radius: 6px;
-            font-size: 0.875rem; /* text-sm */
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .timetable-input:focus {
-            outline: none;
-            border-color: #3B82F6; /* blue-500 */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-        }
-
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -112,12 +96,10 @@
                     <h1 class="text-xl font-bold text-gray-800">Bacheca Compiti</h1>
                     <div class="flex items-center ml-4">
                         <button id="prevWeekBtn" class="p-2 rounded-full hover:bg-gray-100">
-                            <!-- Correzione: Aggiunto text-gray-600 per rendere la freccia visibile -->
                             <span data-lucide="ChevronLeft" class="w-5 h-5 text-gray-600"></span>
                         </button>
                         <span id="currentWeekDisplay" class="text-sm font-medium text-gray-600 w-28 text-center">Caricamento...</span>
                         <button id="nextWeekBtn" class="p-2 rounded-full hover:bg-gray-100">
-                            <!-- Correzione: Aggiunto text-gray-600 per rendere la freccia visibile -->
                             <span data-lucide="ChevronRight" class="w-5 h-5 text-gray-600"></span>
                         </button>
                     </div>
@@ -157,7 +139,10 @@
                 
                 <div class="mb-4">
                     <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Materia</label>
-                    <input type="text" id="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    <!-- MODIFICA: Da input a select -->
+                    <select id="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        <option value="">-- Seleziona Giorno --</option>
+                    </select>
                 </div>
                 
                 <div class="mb-4">
@@ -178,20 +163,19 @@
         </div>
     </div>
 
-    <!-- 4. Modal per Orario Settimanale -->
-    <div id="timetableModal" class="modal">
+    <!-- 4. Modal per Visualizzare l'Orario (NUOVO) -->
+    <div id="viewTimetableModal" class="modal">
         <div class="modal-content max-w-3xl"> <!-- Reso più largo per l'orario -->
-            <h2 class="text-lg font-semibold mb-4">Imposta Orario Settimanale</h2>
-            <form id="timetableForm">
-                <div id="timetableModalContent" class="space-y-6">
-                    <!-- Gli input per l'orario verranno generati qui da JS -->
-                </div>
-                
-                <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
-                    <button type="button" id="closeTimetableModalButton" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Salva Orario</button>
-                </div>
-            </form>
+            <h2 class="text-lg font-semibold mb-4">Orario Settimanale</h2>
+            
+            <!-- MODIFICA: Aggiunto overflow-x-auto per lo swipe/scorrimento orizzontale -->
+            <div id="viewTimetableModalContent" class="max-h-[70vh] overflow-x-auto overflow-y-auto">
+                <!-- Il contenuto dell'orario (la tabella) verrà generato qui da JS -->
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <button type="button" id="closeViewTimetableModalButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Chiudi</button>
+            </div>
         </div>
     </div>
     
@@ -241,7 +225,6 @@
         let currentWeekStart = getStartOfWeek(new Date());
         let allTasks = {}; // Cache locale dei compiti
         let taskUnsubscribe = null; // Funzione per staccare il listener di Firestore
-        let timetableUnsubscribe = null; // Listener per l'orario
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -255,32 +238,40 @@
         const modalTitleEl = document.getElementById('modalTitle');
         const taskIdEl = document.getElementById('taskId');
 
-        // Modal Orario
-        const timetableModalEl = document.getElementById('timetableModal');
-        const timetableFormEl = document.getElementById('timetableForm');
-        const timetableModalContentEl = document.getElementById('timetableModalContent');
+        // Modal Orario (Visualizzazione)
+        const viewTimetableModalEl = document.getElementById('viewTimetableModal');
+        const viewTimetableModalContentEl = document.getElementById('viewTimetableModalContent');
         
         // Modal Conferma
         const confirmModalEl = document.getElementById('confirmModal');
         let confirmCallback = null; // Funzione da eseguire alla conferma
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-        
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+
+        // Configurazione Firebase (iniettata dall'ambiente)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- NUOVA LOGICA: Orario Fisso ---
+        const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
+        
+        // Ore per ciascun giorno (8-9, 9-10, ...)
+        const TIMETABLE_HOURS_MAP = {
+            mon: [8, 9, 10, 11, 12], // 5 ore
+            tue: [8, 9, 10, 11, 12, 13], // 6 ore
+            wed: [8, 9, 10, 11, 12], // 5 ore
+            thu: [8, 9, 10, 11, 12, 13], // 6 ore
+            fri: [8, 9, 10, 11, 12]  // 5 ore
+        };
+
+        // Orario fisso con materie
+        const FIXED_TIMETABLE = {
+            mon: ["Latino", "Matematica", "Matematica", "Inglese", "Italiano"],
+            tue: ["Italiano", "Motoria", "Matematica", "Matematica", "Italiano", "Scienze"],
+            wed: ["Inglese", "Latino", "Italiano", "Arte", "Matematica"],
+            thu: ["Scienze", "Italiano", "Italiano", "Religione", "Matematica", "Arte"],
+            fri: ["Latino", "Matematica", "Italiano", "Inglese", "Motoria"]
+        };
+        // --- Fine Logica Orario Fisso ---
 
         // --- Inizializzazione Firebase ---
         
@@ -320,7 +311,7 @@
             }
         }
 
-        // Carica tutti i dati dell'utente (orario e compiti)
+        // Carica tutti i dati dell'utente (solo compiti)
         async function loadUserData() {
             if (!userId) return;
 
@@ -328,136 +319,99 @@
             loadingSpinner.style.display = 'none';
             weekGridEl.style.display = 'block';
 
-            // 1. Inizializza e carica l'orario
-            setupTimetableModal(); // Costruisce il modal dell'orario
-            await attachTimetableListener();
+            // 1. Renderizza la settimana (userà l'orario fisso)
+            renderWeekDisplay(currentWeekStart);
 
-            // 2. Carica i compiti (il listener viene attivato da attachTimetableListener)
-            //    dopo il primo caricamento dell'orario.
+            // 2. Collega il listener per i compiti
+            await attachTaskListener();
         }
 
-        // --- Funzioni Orario (NUOVA LOGICA) ---
-
-        const timetableDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
-        const timetableHours = [8, 9, 10, 11, 12];
-        const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
+        // --- Funzioni Orario (Logica di Visualizzazione) ---
         
-        // Costruisce l'HTML per il modal dell'orario
-        function setupTimetableModal() {
-            let html = '';
-            timetableDays.forEach(dayKey => {
-                html += `<div class_="mb-4">
-                    <h4 class="font-semibold mb-2 text-gray-800">${dayNames[dayKey]}</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">`;
-                
-                timetableHours.forEach(hour => {
-                    html += `<label class="block">
-                        <span class="text-xs font-medium text-gray-600">${hour}:00-${hour+1}:00</span>
-                        <input type="text" id="timetable-${dayKey}-${hour}" 
-                               placeholder="Materia..."
-                               class="timetable-input mt-1">
-                    </label>`;
-                });
-                
-                html += `</div></div>`;
-                if (dayKey !== 'fri') {
-                    html += `<hr class="my-4">`;
-                }
-            });
-            timetableModalContentEl.innerHTML = html;
-        }
-
-        // Si collega a Firestore e ascolta le modifiche all'orario
-        async function attachTimetableListener() {
-            if (timetableUnsubscribe) timetableUnsubscribe(); // Stacca listener precedente
-
-            const timetableDocRef = doc(db, "artifacts", appId, "users", userId, "data", "timetable");
+        // Popola e apre il modal di visualizzazione dell'orario
+        function openTimetableModal() {
+            // MODIFICA: Logica completamente riscritta per generare una tabella
             
-            timetableUnsubscribe = onSnapshot(timetableDocRef, (docSnap) => {
-                console.log("Dati orario ricevuti:", docSnap.exists() ? docSnap.data() : "Nessun dato");
-                const timetableData = docSnap.exists() ? docSnap.data() : {};
-                
-                // Popola il modal con i dati caricati
-                timetableDays.forEach(dayKey => {
-                    timetableHours.forEach(hour => {
-                        const inputId = `timetable-${dayKey}-${hour}`;
-                        const subject = timetableData[`${dayKey}-${hour}`] || '';
-                        const inputEl = document.getElementById(inputId);
-                        if (inputEl) {
-                            inputEl.value = subject;
-                        }
-                    });
-                });
-
-                // Aggiorna la vista principale (passando i dati dell'orario)
-                renderWeekDisplay(currentWeekStart, timetableData);
-                
-                // Ora che l'orario è caricato e renderizzato, attacca il listener dei compiti
-                // Lo facciamo qui per assicurarci che la griglia sia pronta
-                if (!taskUnsubscribe) {
-                    attachTaskListener();
-                }
-
-            }, (error) => {
-                console.error("Errore nel listener dell'orario:", error);
-                showError("Impossibile caricare l'orario.");
+            const hours = [8, 9, 10, 11, 12, 13]; // Ore massime (fino alle 14:00)
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
+            
+            let tableHtml = `
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
+                    <thead class="bg-gray-100 sticky top-0">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ora</th>
+            `;
+            
+            // Intestazioni dei giorni
+            days.forEach(dayKey => {
+                tableHtml += `<th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">${dayNames[dayKey]}</th>`;
             });
-        }
-
-        // Salva l'orario su Firestore
-        async function handleSaveTimetable(e) {
-            e.preventDefault();
-            if (!userId) return;
-
-            const timetableData = {};
-            timetableDays.forEach(dayKey => {
-                timetableHours.forEach(hour => {
-                    const inputId = `timetable-${dayKey}-${hour}`;
-                    timetableData[`${dayKey}-${hour}`] = document.getElementById(inputId).value.trim();
+            
+            tableHtml += `
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+            `;
+            
+            // Righe delle ore
+            hours.forEach((hour, hourIndex) => {
+                // Aggiungi colori di riga alternati
+                tableHtml += `<tr class="even:bg-gray-50">`;
+                
+                // Cella dell'ora
+                tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-800">${hour}:00 - ${hour+1}:00</td>`;
+                
+                // Cella per ogni giorno
+                days.forEach(dayKey => {
+                    // Trova la materia per questo giorno a questa ora (indice)
+                    const subject = FIXED_TIMETABLE[dayKey][hourIndex];
+                    
+                    if (subject) {
+                        tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${subject}</td>`;
+                    } else {
+                        // Giorno corto (es. Lunedì alle 13:00 non ha lezioni)
+                        tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-400">-</td>`;
+                    }
                 });
+                
+                tableHtml += `</tr>`;
             });
-
-            try {
-                const timetableDocRef = doc(db, "artifacts", appId, "users", userId, "data", "timetable");
-                await setDoc(timetableDocRef, timetableData);
-                console.log("Orario salvato:", timetableData);
-                closeTimetableModal();
-                // Il listener onSnapshot aggiornerà automaticamente la UI
-            } catch (error) {
-                console.error("Errore salvataggio orario:", error);
-                showError("Errore nel salvataggio dell'orario.");
-            }
+            
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+            
+            viewTimetableModalContentEl.innerHTML = tableHtml;
+            viewTimetableModalEl.style.display = 'flex';
         }
         
-        // Genera l'HTML dell'orario raggruppando le ore
-        function generateTimetableHTML(dayKey, timetableData = {}) {
-            const hoursMap = timetableHours.map(hour => ({
-                hour: hour,
-                subject: timetableData[`${dayKey}-${hour}`] || null
-            }));
+        function closeTimetableModal() {
+            viewTimetableModalEl.style.display = 'none';
+        }
 
+        // Genera l'HTML dell'orario per la colonna del giorno (raggruppando le ore)
+        function generateTimetableHTML(dayKey) {
+            const hours = TIMETABLE_HOURS_MAP[dayKey];
+            const subjects = FIXED_TIMETABLE[dayKey];
+
+            if (!hours || !subjects) return '<p class="text-xs text-gray-400 italic">Orario non definito</p>';
+            
             let htmlEntries = [];
             let i = 0;
-            while (i < hoursMap.length) {
-                let current = hoursMap[i];
-                let subject = current.subject;
-                let startHour = current.hour;
-
-                if (subject === null) {
-                    // Se l'ora è libera, salta
-                    i++;
-                    continue; 
-                }
+            while (i < subjects.length) {
+                let subject = subjects[i];
+                let startHour = hours[i];
 
                 let j = i + 1;
                 // Guarda avanti per trovare ore consecutive con la stessa materia
-                while (j < hoursMap.length && hoursMap[j].subject === subject) {
+                while (j < subjects.length && subjects[j] === subject) {
                     j++;
                 }
                 
                 // j è ora all'indice della prima ora diversa (o alla fine)
                 // L'ora finale è l'ora dell'ultimo blocco + 1
-                let endHour = hoursMap[j - 1].hour + 1; 
+                let endHour = hours[j - 1] + 1; 
                 
                 htmlEntries.push(`<p class="text-xs text-gray-800 font-semibold">${startHour}:00 - ${endHour}:00: <span class="font-medium">${subject}</span></p>`);
                 
@@ -531,9 +485,27 @@
 
             modalTitleEl.innerText = "Modifica Compito";
             taskIdEl.value = id;
+            
+            // Popola prima il dropdown in base alla data del compito
+            populateSubjectDropdown(task.dueDate);
+            
+            // Ora imposta i valori
             taskFormEl.subject.value = task.subject;
             taskFormEl.description.value = task.description;
             taskFormEl.dueDate.value = task.dueDate;
+
+            // Gestione speciale: se la materia del compito non è PIÙ nell'orario
+            // di quel giorno, la aggiungiamo manualmente al dropdown
+            const subjectSelectEl = document.getElementById('subject');
+            if (task.subject && !subjectSelectEl.querySelector(`option[value="${task.subject}"]`)) {
+                const oldOption = document.createElement('option');
+                oldOption.value = task.subject;
+                oldOption.textContent = `${task.subject} (vecchia)`;
+                subjectSelectEl.appendChild(oldOption);
+                // E la riselezioniamo
+                taskFormEl.subject.value = task.subject;
+            }
+
             modalEl.style.display = 'flex';
         }
 
@@ -574,7 +546,7 @@
         // --- Funzioni di Rendering UI ---
 
         // Disegna l'intera griglia settimanale
-        function renderWeekDisplay(startDate, timetableData = {}) {
+        function renderWeekDisplay(startDate) {
             if (!weekScrollContainerEl) return; // Assicurati che l'elemento esista
             
             weekScrollContainerEl.innerHTML = ''; // Pulisci la griglia
@@ -582,26 +554,12 @@
 
             const days = getWeekDays(startDate); // Ottiene i 5 giorni (Lun-Ven)
 
-            // Trova l'orario (se è già stato caricato)
-            // Se timetableData è vuoto, prova a leggerlo dal modal (come fallback)
-            if (Object.keys(timetableData).length === 0) {
-                // Tenta di recuperare i dati correnti se il listener li ha già caricati
-                const ttDocRef = doc(db, "artifacts", appId, "users", userId, "data", "timetable");
-                getDoc(ttDocRef).then(docSnap => {
-                    if (docSnap.exists()) {
-                        timetableData = docSnap.data();
-                        // Richiama il rendering, ma solo se è la prima volta
-                        // Questo è un fallback, idealmente timetableData viene passato da attachTimetableListener
-                    }
-                });
-            }
-
             for (const day of days) {
                 const dateStr = formatDate(day.date);
                 const dayKey = day.value.toLowerCase().substring(0, 3); // 'mon', 'tue', ecc.
                 
-                // Genera l'HTML per l'orario di questo giorno
-                const timetableHtml = generateTimetableHTML(dayKey, timetableData);
+                // Genera l'HTML per l'orario di questo giorno (dall'orario fisso)
+                const timetableHtml = generateTimetableHTML(dayKey);
 
                 const dayCard = document.createElement('div');
                 dayCard.className = 'day-column bg-white rounded-xl shadow-sm p-3 flex flex-col';
@@ -717,6 +675,41 @@
         }
 
 
+        // --- Funzione per popolare il dropdown materie (da orario fisso) ---
+        function populateSubjectDropdown(dateStr) {
+            const subjectSelectEl = document.getElementById('subject');
+            subjectSelectEl.innerHTML = '<option value="">-- Seleziona Materia --</option>';
+
+            if (!dateStr) return; // Non c'è data, non fare nulla
+
+            try {
+                // 'sun' (0), 'mon' (1), ...
+                const dateObj = new Date(dateStr + 'T12:00:00'); // Evita problemi TZ
+                const dayOfWeek = dateObj.getDay(); 
+                const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayOfWeek];
+
+                if (!dayKey || dayKey === 'sun' || dayKey === 'sat') return; // Giorno non valido
+
+                // Prende le materie dall'orario fisso
+                const daySubjects = FIXED_TIMETABLE[dayKey] || [];
+                
+                // Rimuovi duplicati
+                const uniqueSubjects = [...new Set(daySubjects)];
+                uniqueSubjects.sort(); // Ordina alfabeticamente
+
+                uniqueSubjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    subjectSelectEl.appendChild(option);
+                });
+            } catch (e) {
+                console.error("Errore nel popolare le materie:", e);
+                subjectSelectEl.innerHTML = '<option value="">Errore nel caricare le materie</option>';
+            }
+        }
+
+
         // --- Funzioni Modal (Finestre Popup) ---
 
         // Apre il modal dei compiti (con data pre-impostata)
@@ -732,19 +725,14 @@
                 taskFormEl.dueDate.value = formatDate(new Date());
             }
             
+            // Popola il dropdown delle materie in base alla data
+            populateSubjectDropdown(defaultDate);
+            
             modalEl.style.display = 'flex';
         }
 
         function closeModal() {
             modalEl.style.display = 'none';
-        }
-        
-        function openTimetableModal() {
-            timetableModalEl.style.display = 'flex';
-        }
-        
-        function closeTimetableModal() {
-            timetableModalEl.style.display = 'none';
         }
         
         // Apre il modal di conferma
@@ -835,7 +823,6 @@
             document.getElementById('todayBtn').addEventListener('click', () => {
                 currentWeekStart = getStartOfWeek(new Date());
                 renderWeekDisplay(currentWeekStart);
-                // Assicurati che l'icona venga renderizzata se ne avessi aggiunta una
                 lucide.createIcons();
             });
 
@@ -843,10 +830,9 @@
             document.getElementById('closeModalButton').addEventListener('click', closeModal);
             taskFormEl.addEventListener('submit', handleSaveTask);
 
-            // Modal Orario
+            // Modal Orario (Visualizzazione)
             document.getElementById('openTimetableButton').addEventListener('click', openTimetableModal);
-            document.getElementById('closeTimetableModalButton').addEventListener('click', closeTimetableModal);
-            timetableFormEl.addEventListener('submit', handleSaveTimetable);
+            document.getElementById('closeViewTimetableModalButton').addEventListener('click', closeTimetableModal);
             
             // Modal Conferma
             document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
