@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bacheca Compiti Settimana</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -132,7 +132,7 @@
                     <button id="todayBtn" class="px-4 py-2 text-base font-medium text-blue-600 bg-blue-100 rounded-lg shadow-sm hover:bg-blue-200 transition">
                         Oggi
                     </button>
-                    <!-- Pulsante Impegni (NUOVO) -->
+                    <!-- Pulsante Impegni -->
                     <button id="openCommitmentsButton" class="px-4 py-2 text-base font-medium text-green-600 bg-green-100 rounded-lg shadow-sm hover:bg-green-200 transition">
                         Impegni
                     </button>
@@ -248,7 +248,7 @@
         </div>
     </div>
     
-    <!-- 8. Modal per Impegni Settimanali (NUOVO) -->
+    <!-- 8. Modal per Impegni Settimanali -->
     <div id="commitmentsModal" class="modal">
         <div class="modal-content max-w-lg">
             <h2 class="text-lg font-semibold mb-4">Impegni Settimanali Fissi</h2>
@@ -352,7 +352,7 @@
         const openAiPlannerButtonEl = document.getElementById('openAiPlannerButton');
         const closeAiPlannerModalButtonEl = document.getElementById('closeAiPlannerModalButton');
         
-        // Modal Impegni (NUOVO)
+        // Modal Impegni
         const commitmentsModalEl = document.getElementById('commitmentsModal');
         const commitmentsFormEl = document.getElementById('commitmentsForm');
         const openCommitmentsButtonEl = document.getElementById('openCommitmentsButton');
@@ -506,7 +506,7 @@
             return htmlEntries.join('\n');
         }
         
-        // --- Funzioni Gestione Impegni (NUOVE) ---
+        // --- Funzioni Gestione Impegni ---
 
         async function attachCommitmentsListener() {
             if (commitmentsUnsubscribe) commitmentsUnsubscribe();
@@ -709,7 +709,7 @@
                     <h3 class="font-semibold text-sm text-gray-500 mb-1">Orario</h3>
                     <div class="timetable-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[40px]">${timetableHtml}</div>
                     
-                    <!-- Sezione Impegni (NUOVA) -->
+                    <!-- Sezione Impegni -->
                     <div class="border-t border-gray-100 my-2"></div>
                     <h3 class="font-semibold text-sm text-gray-500 mb-1">Impegni</h3>
                     <div id="commitments-display-${dayKey}" class="commitments-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[30px]">
@@ -809,9 +809,13 @@
             if (!dateStr) return;
 
             try {
-                const dateObj = new Date(dateStr + 'T12:00:00');
-                const dayOfWeek = dateObj.getDay(); 
+                // Usa il costruttore Date per interpretare la data nel fuso orario locale
+                const parts = dateStr.split('-').map(Number);
+                const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                
+                const dayOfWeek = dateObj.getDay(); // 0 = Dom, 1 = Lun, ... 6 = Sab
                 const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayOfWeek];
+                
                 if (!dayKey || dayKey === 'sun' || dayKey === 'sat') return;
 
                 const daySubjects = FIXED_TIMETABLE[dayKey] || [];
@@ -837,8 +841,9 @@
             taskFormEl.reset();
             modalTitleEl.innerText = "Nuovo Compito";
             taskIdEl.value = '';
-            taskFormEl.dueDate.value = defaultDate ? defaultDate : formatDate(new Date());
-            populateSubjectDropdown(defaultDate);
+            const dateToUse = defaultDate ? defaultDate : formatDate(new Date());
+            taskFormEl.dueDate.value = dateToUse;
+            populateSubjectDropdown(dateToUse);
             modalEl.style.display = 'flex';
         }
 
@@ -882,7 +887,7 @@
         async function callGeminiApi(subject, description) {
             isAiCallPending = true;
 
-            const systemPrompt = `Sei un assistente tutor (per una studentessa di Liceo Scientifico in Italia).
+            const systemPrompt = `Sei un assistente tutor (per una studentessa di scuola media o superiore in Italia).
 Rispondi sempre in italiano.
 Il tuo compito è analizzare il compito assegnato e fornire supporto.
 Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li> e grassetto <strong>).
@@ -969,7 +974,7 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 }
             }
             
-            // 1b. Raccogli gli impegni fissi (NUOVO)
+            // 1b. Raccogli gli impegni fissi
             const commitmentsForWeek = [];
             for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
                 if (localCommitments[dayKey]) {
@@ -998,7 +1003,7 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 return `${dayName}:\n${subjectList}`;
             }).join('\n\n');
             
-            // 3. Prepara i prompt (AGGIORNATI)
+            // 3. Prepara i prompt
             const today = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
             const systemPrompt = `Sei un "Tutor di Pianificazione" esperto per studenti italiani.
@@ -1089,8 +1094,12 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
             return days;
         }
 
+        // CORREZIONE per il bug del Lunedì (non usa UTC)
         function formatDate(date) {
-            return date.toISOString().split('T')[0];
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function formatWeekRange(startDate) {
@@ -1156,7 +1165,7 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
             openAiPlannerButtonEl.addEventListener('click', openAiPlannerModal);
             closeAiPlannerModalButtonEl.addEventListener('click', closeAiPlannerModal);
             
-            // Modal Impegni (NUOVO)
+            // Modal Impegni
             openCommitmentsButtonEl.addEventListener('click', openCommitmentsModal);
             closeCommitmentsModalButtonEl.addEventListener('click', closeCommitmentsModal);
             commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
