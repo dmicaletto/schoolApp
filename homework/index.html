@@ -286,11 +286,21 @@
         const aiModalContentEl = document.getElementById('aiModalContent');
         const closeAiModalButtonEl = document.getElementById('closeAiModalButton');
 
-        // Configurazione Firebase (iniettata dall'ambiente)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
+          authDomain: "homework-98001.firebaseapp.com",
+          projectId: "homework-98001",
+          storageBucket: "homework-98001.firebasestorage.app",
+          messagingSenderId: "262210380418",
+          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
+          measurementId: "G-GXB43QLXN3"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
         // --- LOGICA ORARIO FISSO ---
         const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
         
