@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>Bacheca Compiti Settimana</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,7 +29,7 @@
         .week-scroll-container {
             display: flex;
             overflow-x: auto;
-            scroll-snap-type: x mandatory; /* Aggancia le colonne durante lo scorrimento */
+            scroll-snap-type: x mandatory; /* Aggancia le colonne during lo scorrimento */
             -webkit-overflow-scrolling: touch; /* Scrolling fluido su iOS */
         }
 
@@ -125,13 +125,16 @@
                     </div>
                 </div>
                 <!-- Pulsanti Azione -->
-                <div class="flex gap-2 mt-4 sm:mt-0">
-                    <!-- NUOVO PULSANTE AI PLANNER -->
+                <div class="flex flex-wrap justify-center gap-2 mt-4 sm:mt-0">
                     <button id="openAiPlannerButton" class="px-4 py-2 text-base font-medium text-purple-600 bg-purple-100 rounded-lg shadow-sm hover:bg-purple-200 transition">
                         AI Planner
                     </button>
                     <button id="todayBtn" class="px-4 py-2 text-base font-medium text-blue-600 bg-blue-100 rounded-lg shadow-sm hover:bg-blue-200 transition">
                         Oggi
+                    </button>
+                    <!-- Pulsante Impegni (NUOVO) -->
+                    <button id="openCommitmentsButton" class="px-4 py-2 text-base font-medium text-green-600 bg-green-100 rounded-lg shadow-sm hover:bg-green-200 transition">
+                        Impegni
                     </button>
                     <button id="openTimetableButton" class="px-4 py-2 text-base font-medium text-gray-700 bg-gray-100 rounded-lg shadow-sm hover:bg-gray-200 transition">
                         Orario
@@ -229,9 +232,9 @@
         </div>
     </div>
     
-    <!-- 7. Modal AI Planner (NUOVO per Fase 2) -->
+    <!-- 7. Modal AI Planner -->
     <div id="aiPlannerModal" class="modal" style="z-index: 60;">
-        <div class="modal-content max-w-2xl"> <!-- Più largo per il piano -->
+        <div class="modal-content max-w-2xl">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold text-purple-600">Piano di Studio AI</h2>
                 <button id="closeAiPlannerModalButton" class="p-2 rounded-full hover:bg-gray-100">
@@ -242,6 +245,42 @@
             <div id="aiPlannerModalContent" class="ai-modal-content max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
                 <!-- Contenuto generato dall'AI Planner -->
             </div>
+        </div>
+    </div>
+    
+    <!-- 8. Modal per Impegni Settimanali (NUOVO) -->
+    <div id="commitmentsModal" class="modal">
+        <div class="modal-content max-w-lg">
+            <h2 class="text-lg font-semibold mb-4">Impegni Settimanali Fissi</h2>
+            <form id="commitmentsForm">
+                <p class="text-sm text-gray-600 mb-4">Inserisci qui gli impegni pomeridiani fissi (es. sport, musica) per aiutare l'AI a pianificare meglio.</p>
+                <div class="space-y-3">
+                    <div>
+                        <label for="commit-mon" class="block text-sm font-medium text-gray-700">Lunedì</label>
+                        <input type="text" id="commit-mon" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Es. 17:00 - 18:00: Pianoforte">
+                    </div>
+                    <div>
+                        <label for="commit-tue" class="block text-sm font-medium text-gray-700">Martedì</label>
+                        <input type="text" id="commit-tue" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Es. 17:00 - 19:00: Pallavolo">
+                    </div>
+                    <div>
+                        <label for="commit-wed" class="block text-sm font-medium text-gray-700">Mercoledì</label>
+                        <input type="text" id="commit-wed" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="commit-thu" class="block text-sm font-medium text-gray-700">Giovedì</label>
+                        <input type="text" id="commit-thu" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="commit-fri" class="block text-sm font-medium text-gray-700">Venerdì</label>
+                        <input type="text" id="commit-fri" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
+                    <button type="button" id="closeCommitmentsModalButton" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Salva Impegni</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -278,7 +317,9 @@
         let currentWeekStart = getStartOfWeek(new Date());
         let allTasks = {};
         let taskUnsubscribe = null;
-        let isAiCallPending = false; // Per entrambi i modal AI
+        let commitmentsUnsubscribe = null; // Listener per Impegni
+        let localCommitments = {}; // Cache locale per Impegni
+        let isAiCallPending = false;
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -305,26 +346,21 @@
         const aiModalContentEl = document.getElementById('aiModalContent');
         const closeAiModalButtonEl = document.getElementById('closeAiModalButton');
         
-        // Modal AI Planner (NUOVO)
+        // Modal AI Planner
         const aiPlannerModalEl = document.getElementById('aiPlannerModal');
         const aiPlannerModalContentEl = document.getElementById('aiPlannerModalContent');
         const openAiPlannerButtonEl = document.getElementById('openAiPlannerButton');
         const closeAiPlannerModalButtonEl = document.getElementById('closeAiPlannerModalButton');
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
         
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        // Modal Impegni (NUOVO)
+        const commitmentsModalEl = document.getElementById('commitmentsModal');
+        const commitmentsFormEl = document.getElementById('commitmentsForm');
+        const openCommitmentsButtonEl = document.getElementById('openCommitmentsButton');
+        const closeCommitmentsModalButtonEl = document.getElementById('closeCommitmentsModalButton');
+
+        // Configurazione Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- LOGICA ORARIO FISSO ---
@@ -385,7 +421,14 @@
             if (!userId) return;
             loadingSpinner.style.display = 'none';
             weekGridEl.style.display = 'block';
+            
+            // Carica gli impegni (e popola il modal) PRIMA di renderizzare la settimana
+            await attachCommitmentsListener(); 
+            
+            // Ora renderizza la settimana (userà localCommitments)
             renderWeekDisplay(currentWeekStart);
+            
+            // Infine, attacca il listener dei compiti
             await attachTaskListener();
         }
 
@@ -407,7 +450,7 @@
             tableHtml += `</tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
             
             hours.forEach((hour, hourIndex) => {
-                tableHtml += `<tr class="even:bg-gray-50">`;
+                tableHtml += `<tr class="even:bg-gray-50">`; // Righe alternate
                 tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-800">${hour}:00 - ${hour+1}:00</td>`;
                 
                 days.forEach(dayKey => {
@@ -415,7 +458,7 @@
                     if (subject) {
                         tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${subject}</td>`;
                     } else {
-                        tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-400">-</td>`;
+                        tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-400">-</td>`; // Ora vuota
                     }
                 });
                 tableHtml += `</tr>`;
@@ -450,6 +493,83 @@
             }
             if (htmlEntries.length === 0) return '<p class="text-xs text-gray-400 italic">Nessun orario impostato</p>';
             return htmlEntries.join('\n');
+        }
+        
+        // --- Funzioni Gestione Impegni (NUOVE) ---
+
+        async function attachCommitmentsListener() {
+            if (commitmentsUnsubscribe) commitmentsUnsubscribe();
+            
+            const commitmentsDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
+            
+            return new Promise((resolve) => {
+                commitmentsUnsubscribe = onSnapshot(commitmentsDocRef, (docSnap) => {
+                    console.log("Dati impegni ricevuti:", docSnap.exists() ? docSnap.data() : "Nessun dato");
+                    localCommitments = docSnap.exists() ? docSnap.data() : {};
+                    
+                    // Popola il modal
+                    for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+                        const inputEl = document.getElementById(`commit-${dayKey}`);
+                        if (inputEl) {
+                            inputEl.value = localCommitments[dayKey] || '';
+                        }
+                    }
+                    
+                    // Aggiorna la vista
+                    renderWeekCommitments();
+                    resolve(); // Risolve la promessa una volta caricati i dati
+                }, (error) => {
+                    console.error("Errore nel listener degli impegni:", error);
+                    showError("Impossibile caricare gli impegni.");
+                    resolve(); // Risolve comunque per non bloccare l'app
+                });
+            });
+        }
+
+        async function handleSaveCommitments(e) {
+            e.preventDefault();
+            if (!userId) return;
+
+            const commitmentsData = {};
+            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+                const inputEl = document.getElementById(`commit-${dayKey}`);
+                commitmentsData[dayKey] = inputEl.value.trim() || '';
+            }
+
+            try {
+                const commitmentsDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
+                await setDoc(commitmentsDocRef, commitmentsData);
+                console.log("Impegni salvati:", commitmentsData);
+                closeCommitmentsModal();
+                // onSnapshot aggiornerà localCommitments e la UI
+            } catch (error) {
+                console.error("Errore salvataggio impegni:", error);
+                showError("Errore nel salvataggio degli impegni.");
+            }
+        }
+        
+        function openCommitmentsModal() {
+            // I dati sono già popolati nel modal dal listener
+            commitmentsModalEl.style.display = 'flex';
+        }
+
+        function closeCommitmentsModal() {
+            commitmentsModalEl.style.display = 'none';
+        }
+
+        // Popola la sezione "Impegni" nelle colonne dei giorni
+        function renderWeekCommitments() {
+            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+                const displayEl = document.getElementById(`commitments-display-${dayKey}`);
+                if (displayEl) {
+                    const commitmentText = localCommitments[dayKey];
+                    if (commitmentText) {
+                        displayEl.innerHTML = `<p class="text-xs text-gray-800 font-semibold">${commitmentText}</p>`;
+                    } else {
+                        displayEl.innerHTML = `<p class="text-xs text-gray-400 italic">Nessun impegno</p>`;
+                    }
+                }
+            }
         }
 
 
@@ -563,6 +683,7 @@
                 const dateStr = formatDate(day.date);
                 const dayKey = day.value.toLowerCase().substring(0, 3);
                 const timetableHtml = generateTimetableHTML(dayKey);
+                
                 const dayCard = document.createElement('div');
                 dayCard.className = 'day-column bg-white rounded-xl shadow-sm p-3 flex flex-col';
                 dayCard.id = `day-${dateStr}`;
@@ -571,9 +692,20 @@
                         <h2 class="text-base font-semibold text-gray-800">${day.name}</h2>
                         <span class="text-sm font-medium text-gray-500">${day.date.getDate()}</span>
                     </div>
+                    
+                    <!-- Sezione Orario -->
                     <div class="border-t border-gray-100 my-2"></div>
                     <h3 class="font-semibold text-sm text-gray-500 mb-1">Orario</h3>
                     <div class="timetable-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[40px]">${timetableHtml}</div>
+                    
+                    <!-- Sezione Impegni (NUOVA) -->
+                    <div class="border-t border-gray-100 my-2"></div>
+                    <h3 class="font-semibold text-sm text-gray-500 mb-1">Impegni</h3>
+                    <div id="commitments-display-${dayKey}" class="commitments-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[30px]">
+                        <!-- Popolato da renderWeekCommitments -->
+                    </div>
+
+                    <!-- Sezione Compiti -->
                     <div class="border-t border-gray-100 my-2"></div>
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-semibold text-sm text-gray-500">Compiti</h3>
@@ -593,6 +725,7 @@
             });
 
             populateTasksForWeek(days);
+            renderWeekCommitments(); // Popola gli impegni con i dati in cache
             lucide.createIcons();
         }
 
@@ -753,7 +886,7 @@ La tua risposta deve essere strutturata in 2 parti:
 
 Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggiornate (usa la ricerca se necessario).`;
             
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -789,7 +922,7 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
             }
         }
         
-        // --- Funzioni AI Planner (NUOVE per Fase 2) ---
+        // --- Funzioni AI Planner (AGGIORNATE CON IMPEGNI) ---
 
         function openAiPlannerModal() {
             if (isAiCallPending) return;
@@ -825,6 +958,14 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 }
             }
             
+            // 1b. Raccogli gli impegni fissi (NUOVO)
+            const commitmentsForWeek = [];
+            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+                if (localCommitments[dayKey]) {
+                    commitmentsForWeek.push(`- ${dayNames[dayKey]}: ${localCommitments[dayKey]}`);
+                }
+            }
+            
             if (tasksForWeek.length === 0) {
                  aiPlannerModalContentEl.innerHTML = `
                     <div class="text-center">
@@ -846,7 +987,7 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 return `${dayName}:\n${subjectList}`;
             }).join('\n\n');
             
-            // 3. Prepara i prompt
+            // 3. Prepara i prompt (AGGIORNATI)
             const today = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
             const systemPrompt = `Sei un "Tutor di Pianificazione" esperto per studenti italiani.
@@ -855,21 +996,25 @@ Rispondi sempre in italiano.
 Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong> e titoli <h3>).
 
 Regole Chiave:
-1.  **Analizza i Dati:** Riceverai la data di oggi, l'orario scolastico (mattina) e un elenco di compiti con scadenze.
+1.  **Analizza i Dati:** Riceverai la data di oggi, l'orario scolastico (mattina), un elenco di *impegni fissi* (sport, musica, ecc.) e un elenco di compiti con scadenze.
 2.  **Pianifica solo i Pomeriggi:** Il tuo piano deve iniziare dal pomeriggio di "oggi" fino a venerdì.
-3.  **Dai Priorità:** Assegna priorità ai compiti con scadenza più vicina.
-4.  **Sii Realistico:** Non sovraccaricare. Alterna materie (es. non 2 ore di fila di Matematica). Includi brevi pause.
-5.  **Struttura:** Dividi il piano per giorno (es. <h3>Piano per Oggi (Martedì)</h3>). Per ogni giorno, crea una lista puntata <ul><li> con i compiti da fare e un orario suggerito (es. "15:00-15:45: Matematica").
-6.  **Tono:** Sii incoraggiante e positivo. Inizia con una breve frase di incoraggiamento.`;
+3.  **RISPETTA GLI IMPEGNI FISSI:** Gli impegni fissi hanno la priorità assoluta. Devi pianificare lo studio *attorno* a questi orari bloccati. Non sovrapporre lo studio agli impegni.
+4.  **Dai Priorità (Compiti):** Assegna priorità ai compiti con scadenza più vicina.
+5.  **Sii Realistico:** Non sovraccaricare. Alterna materie (es. non 2 ore di fila di Matematica). Includi brevi pause.
+6.  **Struttura:** Dividi il piano per giorno (es. <h3>Piano per Oggi (Martedì)</h3>). Per ogni giorno, crea una lista puntata <ul><li> con i compiti da fare e un orario suggerito (es. "15:00-15:45: Matematica"). Assicurati di menzionare gli impegni fissi nel piano (es. "17:00-19:00: Pallavolo").
+7.  **Tono:** Sii incoraggiante e positivo. Inizia con una breve frase di incoraggiamento.`;
             
             const userQuery = `Ciao! Oggi è ${today}.
 Questo è il mio orario scolastico (so quando sono a scuola la mattina):
 ${formattedTimetable}
 
-Questi sono i miei compiti da fare per questa settimana:
+Questi sono i miei *impegni fissi* (sport, ecc.) da rispettare:
+${commitmentsForWeek.length > 0 ? commitmentsForWeek.join('\n') : "Nessun impegno fisso questa settimana."}
+
+Questi sono i miei *compiti* da fare per questa settimana:
 ${tasksForWeek.join('\n')}
 
-Per favore, creami un piano di studio pomeridiano da oggi fino a venerdì per completare tutto in tempo.`;
+Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispetti i miei impegni fissi e mi permetta di completare i compiti in tempo.`;
 
             // 4. Chiama l'API (SENZA Google Search)
             const apiKey = "";
@@ -996,9 +1141,14 @@ Per favore, creami un piano di studio pomeridiano da oggi fino a venerdì per co
             // Modal AI (Compito singolo)
             closeAiModalButtonEl.addEventListener('click', closeAiModal);
             
-            // Modal AI Planner (NUOVO)
+            // Modal AI Planner
             openAiPlannerButtonEl.addEventListener('click', openAiPlannerModal);
             closeAiPlannerModalButtonEl.addEventListener('click', closeAiPlannerModal);
+            
+            // Modal Impegni (NUOVO)
+            openCommitmentsButtonEl.addEventListener('click', openCommitmentsModal);
+            closeCommitmentsModalButtonEl.addEventListener('click', closeCommitmentsModal);
+            commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
 
             // Avvia l'app
             initializeFirebase();
