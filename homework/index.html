@@ -268,16 +268,18 @@
         
         // Your web app's Firebase configuration
         const firebaseConfig = {
-          apiKey: "AIzaSyCfTXY1foD8Dr9UxRNzLeOu680aNtIw4TA",
-          authDomain: "training-c0b76.firebaseapp.com",
-          projectId: "training-c0b76",
-          storageBucket: "training-c0b76.firebasestorage.app",
-          messagingSenderId: "149618028951",
-          appId: "1:149618028951:web:eca42664d47ab6d71954d2"
+          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
+          authDomain: "homework-98001.firebaseapp.com",
+          projectId: "homework-98001",
+          storageBucket: "homework-98001.firebasestorage.app",
+          messagingSenderId: "262210380418",
+          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
+          measurementId: "G-GXB43QLXN3"
         };
         
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Inizializzazione Firebase ---
