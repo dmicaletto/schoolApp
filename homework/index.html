@@ -82,21 +82,24 @@
             text-align: center;
         }
         
-        /* Stile per il contenuto del modal AI (per formattare la risposta) */
-        #aiModalContent p {
+        /* Stile per il contenuto dei modal AI (per formattare la risposta) */
+        .ai-modal-content p {
             margin-bottom: 0.75rem; /* 12px */
             line-height: 1.6;
         }
-        #aiModalContent ul {
+        .ai-modal-content ul {
             list-style-type: disc;
             padding-left: 20px;
             margin-bottom: 0.75rem;
         }
-        #aiModalContent li {
+        .ai-modal-content li {
             margin-bottom: 0.25rem; /* 4px */
         }
-        #aiModalContent strong {
+        .ai-modal-content strong, .ai-modal-content h3 {
             font-weight: 600;
+            color: #1F2937; /* gray-800 */
+            margin-top: 0.5rem;
+            margin-bottom: 0.25rem;
         }
     </style>
 </head>
@@ -123,6 +126,10 @@
                 </div>
                 <!-- Pulsanti Azione -->
                 <div class="flex gap-2 mt-4 sm:mt-0">
+                    <!-- NUOVO PULSANTE AI PLANNER -->
+                    <button id="openAiPlannerButton" class="px-4 py-2 text-base font-medium text-purple-600 bg-purple-100 rounded-lg shadow-sm hover:bg-purple-200 transition">
+                        AI Planner
+                    </button>
                     <button id="todayBtn" class="px-4 py-2 text-base font-medium text-blue-600 bg-blue-100 rounded-lg shadow-sm hover:bg-blue-200 transition">
                         Oggi
                     </button>
@@ -156,7 +163,6 @@
                 
                 <div class="mb-4">
                     <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Materia</label>
-                    <!-- MODIFICA: Da input a select -->
                     <select id="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                         <option value="">-- Seleziona Giorno --</option>
                     </select>
@@ -182,12 +188,11 @@
 
     <!-- 4. Modal per Visualizzare l'Orario -->
     <div id="viewTimetableModal" class="modal">
-        <div class="modal-content max-w-3xl"> <!-- Reso più largo per l'orario -->
+        <div class="modal-content max-w-3xl">
             <h2 class="text-lg font-semibold mb-4">Orario Settimanale</h2>
             
-            <!-- Aggiunto overflow-x-auto per lo swipe/scorrimento orizzontale -->
             <div id="viewTimetableModalContent" class="max-h-[70vh] overflow-x-auto overflow-y-auto">
-                <!-- Il contenuto dell'orario (la tabella) verrà generato qui da JS -->
+                <!-- Tabella orario generata da JS -->
             </div>
             
             <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
@@ -197,7 +202,7 @@
     </div>
     
     <!-- 5. Modal di Conferma Eliminazione (Personalizzato) -->
-    <div id="confirmModal" class="modal" style="z-index: 60;"> <!-- z-index più alto -->
+    <div id="confirmModal" class="modal" style="z-index: 60;">
         <div class="confirm-modal-content">
             <h3 id="confirmTitle" class="text-lg font-semibold mb-3">Sei sicuro?</h3>
             <p id="confirmMessage" class="text-sm text-gray-600 mb-6">Vuoi davvero eliminare questo elemento?</p>
@@ -208,7 +213,7 @@
         </div>
     </div>
     
-    <!-- 6. Modal Assistente AI (NUOVO) -->
+    <!-- 6. Modal Assistente AI (per singolo compito) -->
     <div id="aiModal" class="modal" style="z-index: 60;">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
@@ -218,9 +223,24 @@
                 </button>
             </div>
             
-            <!-- Contenuto generato dall'AI -->
-            <div id="aiModalContent" class="max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
-                <!-- Il caricamento o il contenuto AI appariranno qui -->
+            <div id="aiModalContent" class="ai-modal-content max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
+                <!-- Contenuto generato dall'AI -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 7. Modal AI Planner (NUOVO per Fase 2) -->
+    <div id="aiPlannerModal" class="modal" style="z-index: 60;">
+        <div class="modal-content max-w-2xl"> <!-- Più largo per il piano -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-purple-600">Piano di Studio AI</h2>
+                <button id="closeAiPlannerModalButton" class="p-2 rounded-full hover:bg-gray-100">
+                    <span data-lucide="X" class="w-5 h-5 text-gray-600"></span>
+                </button>
+            </div>
+            
+            <div id="aiPlannerModalContent" class="ai-modal-content max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
+                <!-- Contenuto generato dall'AI Planner -->
             </div>
         </div>
     </div>
@@ -253,13 +273,12 @@
 
         // --- Variabili Globali e Configurazione ---
         
-        // Variabili globali per lo stato dell'app
         let db, auth;
         let userId = null;
         let currentWeekStart = getStartOfWeek(new Date());
-        let allTasks = {}; // Cache locale dei compiti
-        let taskUnsubscribe = null; // Funzione per staccare il listener di Firestore
-        let isAiCallPending = false; // Evita chiamate multiple all'AI
+        let allTasks = {};
+        let taskUnsubscribe = null;
+        let isAiCallPending = false; // Per entrambi i modal AI
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -279,28 +298,24 @@
         
         // Modal Conferma
         const confirmModalEl = document.getElementById('confirmModal');
-        let confirmCallback = null; // Funzione da eseguire alla conferma
+        let confirmCallback = null;
         
-        // Modal AI (NUOVO)
+        // Modal AI (Compito singolo)
         const aiModalEl = document.getElementById('aiModal');
         const aiModalContentEl = document.getElementById('aiModalContent');
         const closeAiModalButtonEl = document.getElementById('closeAiModalButton');
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
         
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        // Modal AI Planner (NUOVO)
+        const aiPlannerModalEl = document.getElementById('aiPlannerModal');
+        const aiPlannerModalContentEl = document.getElementById('aiPlannerModalContent');
+        const openAiPlannerButtonEl = document.getElementById('openAiPlannerButton');
+        const closeAiPlannerModalButtonEl = document.getElementById('closeAiPlannerModalButton');
+
+        // Configurazione Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
         // --- LOGICA ORARIO FISSO ---
         const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
         
@@ -325,13 +340,11 @@
         
         async function initializeFirebase() {
             try {
-                // Inizializza Firebase
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                setLogLevel('Debug'); // Attiva i log di Firestore
+                setLogLevel('Debug');
 
-                // Gestisce l'autenticazione
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         console.log("Utente autenticato:", user.uid);
@@ -365,10 +378,10 @@
             await attachTaskListener();
         }
 
-        // --- Funzioni Orario (Logica di Visualizzazione) ---
+        // --- Funzioni Orario (Visualizzazione) ---
         
         function openTimetableModal() {
-            const hours = [8, 9, 10, 11, 12, 13]; // Ore massime (fino alle 14:00)
+            const hours = [8, 9, 10, 11, 12, 13];
             const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
             
             let tableHtml = `
@@ -592,7 +605,6 @@
             taskEl.dataset.completed = data.completed;
             taskEl.className = `p-2.5 rounded-lg border flex items-center gap-3 transition ${data.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:bg-gray-50'}`;
 
-            // Checkbox
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = data.completed;
@@ -601,7 +613,6 @@
                 handleToggleTask(id, e.target.checked);
             });
 
-            // Contenuto (Materia + Descrizione)
             const contentDiv = document.createElement('div');
             contentDiv.className = 'flex-1 cursor-pointer';
             contentDiv.innerHTML = `
@@ -610,21 +621,18 @@
             `;
             contentDiv.addEventListener('click', () => handleEditTask(id));
             
-            // --- Pulsanti Azione (AI e Elimina) ---
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'flex flex-col sm:flex-row gap-1 ml-auto';
 
-            // Pulsante Assistente AI (NUOVO)
             const aiButton = document.createElement('button');
             aiButton.className = 'p-1 rounded-full hover:bg-blue-100';
-            aiButton.title = 'Assistente AI'; // Tooltip
+            aiButton.title = 'Assistente AI';
             aiButton.innerHTML = `<span data-lucide="Sparkles" class="text-blue-500 hover:text-blue-700" width="16" height="16"></span>`;
             aiButton.addEventListener('click', () => openAiModal(data.subject, data.description));
             
-            // Pulsante Elimina
             const deleteButton = document.createElement('button');
             deleteButton.className = 'p-1 rounded-full hover:bg-red-100';
-            deleteButton.title = 'Elimina'; // Tooltip
+            deleteButton.title = 'Elimina';
             deleteButton.innerHTML = `<span data-lucide="Trash2" class="text-red-500 hover:text-red-700" width="16" height="16"></span>`;
             deleteButton.addEventListener('click', () => handleDeleteTask(id));
 
@@ -638,7 +646,6 @@
             taskListContainer.appendChild(taskEl);
             lucide.createIcons({ nodes: [taskEl] });
         }
-
 
         // --- Funzione per popolare il dropdown materie (da orario fisso) ---
         function populateSubjectDropdown(dateStr) {
@@ -695,10 +702,10 @@
             confirmCallback = null;
         }
 
-        // --- Funzioni Assistente AI (NUOVE) ---
+        // --- Funzioni Assistente AI (Compito singolo) ---
 
         function openAiModal(subject, description) {
-            if (isAiCallPending) return; // Evita clic multipli
+            if (isAiCallPending) return;
             
             aiModalEl.style.display = 'flex';
             aiModalContentEl.innerHTML = `
@@ -714,7 +721,7 @@
 
         function closeAiModal() {
             aiModalEl.style.display = 'none';
-            aiModalContentEl.innerHTML = ''; // Pulisci contenuto
+            aiModalContentEl.innerHTML = '';
         }
 
         async function callGeminiApi(subject, description) {
@@ -735,12 +742,12 @@ La tua risposta deve essere strutturata in 2 parti:
 
 Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggiornate (usa la ricerca se necessario).`;
             
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE"; // Lasciato vuoto come da istruzioni
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             const payload = {
                 contents: [{ parts: [{ text: userQuery }] }],
-                tools: [{ "google_search": {} }], // Attiva Google Search
+                tools: [{ "google_search": {} }],
                 systemInstruction: {
                     parts: [{ text: systemPrompt }]
                 },
@@ -752,28 +759,142 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Errore API: ${response.statusText}`);
-                }
-
+                if (!response.ok) throw new Error(`Errore API: ${response.statusText}`);
                 const result = await response.json();
                 
                 if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
                     let text = result.candidates[0].content.parts[0].text;
-                    
-                    // Sostituzioni di base per rendere l'HTML più pulito (Gemini a volte usa Markdown)
-                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Grassetto
-                    text = text.replace(/ \*(.*?)/g, '<li>$1</li>'); // Voci elenco
-                    
+                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    text = text.replace(/ \*(.*?)/g, '<li>$1</li>');
                     aiModalContentEl.innerHTML = text;
                 } else {
                     aiModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato una risposta valida. Riprova.</p>';
                 }
-
             } catch (error) {
                 console.error("Errore chiamata AI:", error);
                 aiModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel contattare l'assistente: ${error.message}</p>`;
+            } finally {
+                isAiCallPending = false;
+            }
+        }
+        
+        // --- Funzioni AI Planner (NUOVE per Fase 2) ---
+
+        function openAiPlannerModal() {
+            if (isAiCallPending) return;
+            
+            aiPlannerModalEl.style.display = 'flex';
+            aiPlannerModalContentEl.innerHTML = `
+                <div class="flex items-center justify-center p-4">
+                    <span data-lucide="Loader" class="w-6 h-6 text-purple-500 animate-spin"></span>
+                    <p class="ml-3 text-gray-600">L'AI sta creando il tuo piano di studio...</p>
+                </div>
+            `;
+            lucide.createIcons({ nodes: [aiPlannerModalContentEl] });
+            
+            callGeminiPlannerApi();
+        }
+        
+        function closeAiPlannerModal() {
+            aiPlannerModalEl.style.display = 'none';
+            aiPlannerModalContentEl.innerHTML = '';
+        }
+        
+        async function callGeminiPlannerApi() {
+            isAiCallPending = true;
+
+            // 1. Raccogli i compiti *non completati* per la settimana corrente
+            const days = getWeekDays(currentWeekStart);
+            const dateStrings = days.map(day => formatDate(day.date));
+            const tasksForWeek = [];
+            for (const id in allTasks) {
+                const task = allTasks[id];
+                if (dateStrings.includes(task.dueDate) && !task.completed) {
+                    tasksForWeek.push(`- ${task.subject}: ${task.description} (Scadenza: ${task.dueDate})`);
+                }
+            }
+            
+            if (tasksForWeek.length === 0) {
+                 aiPlannerModalContentEl.innerHTML = `
+                    <div class="text-center">
+                        <span data-lucide="CheckCheck" class="w-12 h-12 mx-auto text-green-500"></span>
+                        <h3 class="font-semibold mt-2">Tutto Fatto!</h3>
+                        <p class="text-sm text-gray-600 mt-1">Non ci sono compiti da pianificare per questa settimana. Ottimo lavoro!</p>
+                    </div>
+                `;
+                lucide.createIcons({ nodes: [aiPlannerModalContentEl] });
+                isAiCallPending = false;
+                return;
+            }
+
+            // 2. Formatta l'orario scolastico
+            const formattedTimetable = Object.entries(FIXED_TIMETABLE).map(([dayKey, subjects]) => {
+                const dayName = dayNames[dayKey];
+                const hours = TIMETABLE_HOURS_MAP[dayKey];
+                const subjectList = subjects.map((subj, index) => `  ${hours[index]}:00-${hours[index]+1}:00: ${subj}`).join('\n');
+                return `${dayName}:\n${subjectList}`;
+            }).join('\n\n');
+            
+            // 3. Prepara i prompt
+            const today = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            const systemPrompt = `Sei un "Tutor di Pianificazione" esperto per studenti italiani.
+Il tuo obiettivo è creare un piano di studio POMERIDIANO realistico, motivante e facile da seguire.
+Rispondi sempre in italiano.
+Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong> e titoli <h3>).
+
+Regole Chiave:
+1.  **Analizza i Dati:** Riceverai la data di oggi, l'orario scolastico (mattina) e un elenco di compiti con scadenze.
+2.  **Pianifica solo i Pomeriggi:** Il tuo piano deve iniziare dal pomeriggio di "oggi" fino a venerdì.
+3.  **Dai Priorità:** Assegna priorità ai compiti con scadenza più vicina.
+4.  **Sii Realistico:** Non sovraccaricare. Alterna materie (es. non 2 ore di fila di Matematica). Includi brevi pause.
+5.  **Struttura:** Dividi il piano per giorno (es. <h3>Piano per Oggi (Martedì)</h3>). Per ogni giorno, crea una lista puntata <ul><li> con i compiti da fare e un orario suggerito (es. "15:00-15:45: Matematica").
+6.  **Tono:** Sii incoraggiante e positivo. Inizia con una breve frase di incoraggiamento.`;
+            
+            const userQuery = `Ciao! Oggi è ${today}.
+Questo è il mio orario scolastico (so quando sono a scuola la mattina):
+${formattedTimetable}
+
+Questi sono i miei compiti da fare per questa settimana:
+${tasksForWeek.join('\n')}
+
+Per favore, creami un piano di studio pomeridiano da oggi fino a venerdì per completare tutto in tempo.`;
+
+            // 4. Chiama l'API (SENZA Google Search)
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`Errore API: ${response.statusText}`);
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
+                    let text = result.candidates[0].content.parts[0].text;
+                    // Sostituzioni per formattare l'HTML
+                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    text = text.replace(/### (.*?)\n/g, '<h3>$1</h3>');
+                    text = text.replace(/\* (.*?)\n/g, '<li>$1</li>');
+                    text = text.replace(/<ul>\s*<li>/g, '<ul><li>'); // Pulisce spazi
+                    text = text.replace(/<\/li>\s*<\/ul>/g, '</li></ul>'); // Pulisce spazi
+                    aiPlannerModalContentEl.innerHTML = text;
+                } else {
+                    aiPlannerModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato un piano valido. Riprova.</p>';
+                }
+            } catch (error) {
+                console.error("Errore chiamata AI Planner:", error);
+                aiPlannerModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel creare il piano: ${error.message}</p>`;
             } finally {
                 isAiCallPending = false;
             }
@@ -861,8 +982,12 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 closeConfirm();
             });
             
-            // Modal AI (NUOVO)
+            // Modal AI (Compito singolo)
             closeAiModalButtonEl.addEventListener('click', closeAiModal);
+            
+            // Modal AI Planner (NUOVO)
+            openAiPlannerButtonEl.addEventListener('click', openAiPlannerModal);
+            closeAiPlannerModalButtonEl.addEventListener('click', closeAiPlannerModal);
 
             // Avvia l'app
             initializeFirebase();
