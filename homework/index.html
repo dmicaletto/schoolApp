@@ -101,6 +101,79 @@
             margin-top: 0.5rem;
             margin-bottom: 0.25rem;
         }
+
+        /* --- Stili Chat AI --- */
+        .ai-chat-messages {
+            height: 300px; /* Altezza fissa per la chat */
+            overflow-y: auto;
+            border: 1px solid #e5e7eb; /* gray-200 */
+            border-radius: 8px;
+            padding: 12px;
+            background-color: #f9fafb; /* gray-50 */
+        }
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin-bottom: 8px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .chat-bubble.user {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.model {
+            background-color: #e5e7eb; /* gray-200 */
+            color: #1f2937; /* gray-800 */
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble.model.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4b5563; /* gray-600 */
+        }
+        .ai-chat-input-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .ai-chat-input {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .ai-chat-input:focus {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+        .ai-chat-input:disabled {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .ai-chat-submit {
+            padding: 8px 12px;
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .ai-chat-submit:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .ai-chat-submit:disabled {
+            background-color: #9ca3af; /* gray-400 */
+            cursor: not-allowed;
+        }
+        /* --- Fine Stili Chat AI --- */
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -216,7 +289,7 @@
         </div>
     </div>
     
-    <!-- 6. Modal Assistente AI (per singolo compito) -->
+    <!-- 6. Modal Assistente AI (ORA CHAT) -->
     <div id="aiModal" class="modal" style="z-index: 60;">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
@@ -226,9 +299,18 @@
                 </button>
             </div>
             
-            <div id="aiModalContent" class="ai-modal-content max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
-                <!-- Contenuto generato dall'AI -->
+            <!-- Contenitore dei messaggi della chat -->
+            <div id="aiChatMessages" class="ai-chat-messages">
+                <!-- I messaggi della chat verranno inseriti qui -->
             </div>
+            
+            <!-- Form per l'input della chat -->
+            <form id="aiChatForm" class="ai-chat-input-form">
+                <input type="text" id="aiChatInput" class="ai-chat-input" placeholder="Fai una domanda..." autocomplete="off">
+                <button type="submit" id="aiChatSubmit" class="ai-chat-submit">
+                    <span data-lucide="Send" class="w-5 h-5"></span>
+                </button>
+            </form>
         </div>
     </div>
     
@@ -320,6 +402,7 @@
         let commitmentsUnsubscribe = null; // Listener per Impegni
         let localCommitments = {}; // Cache locale per Impegni
         let isAiCallPending = false;
+        let currentAiChatHistory = []; // Cronologia della chat AI
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -341,9 +424,12 @@
         const confirmModalEl = document.getElementById('confirmModal');
         let confirmCallback = null;
         
-        // Modal AI (Compito singolo)
+        // Modal AI (Chat)
         const aiModalEl = document.getElementById('aiModal');
-        const aiModalContentEl = document.getElementById('aiModalContent');
+        const aiChatMessagesEl = document.getElementById('aiChatMessages');
+        const aiChatFormEl = document.getElementById('aiChatForm');
+        const aiChatInputEl = document.getElementById('aiChatInput');
+        const aiChatSubmitEl = document.getElementById('aiChatSubmit');
         const closeAiModalButtonEl = document.getElementById('closeAiModalButton');
         
         // Modal AI Planner
@@ -358,20 +444,9 @@
         const openCommitmentsButtonEl = document.getElementById('openCommitmentsButton');
         const closeCommitmentsModalButtonEl = document.getElementById('closeCommitmentsModalButton');
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        // Configurazione Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- LOGICA ORARIO FISSO ---
@@ -433,13 +508,8 @@
             loadingSpinner.style.display = 'none';
             weekGridEl.style.display = 'block';
             
-            // Carica gli impegni (e popola il modal) PRIMA di renderizzare la settimana
             await attachCommitmentsListener(); 
-            
-            // Ora renderizza la settimana (userà localCommitments)
             renderWeekDisplay(currentWeekStart);
-            
-            // Infine, attacca il listener dei compiti
             await attachTaskListener();
         }
 
@@ -518,7 +588,6 @@
                     console.log("Dati impegni ricevuti:", docSnap.exists() ? docSnap.data() : "Nessun dato");
                     localCommitments = docSnap.exists() ? docSnap.data() : {};
                     
-                    // Popola il modal
                     for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
                         const inputEl = document.getElementById(`commit-${dayKey}`);
                         if (inputEl) {
@@ -526,13 +595,12 @@
                         }
                     }
                     
-                    // Aggiorna la vista
                     renderWeekCommitments();
-                    resolve(); // Risolve la promessa una volta caricati i dati
+                    resolve();
                 }, (error) => {
                     console.error("Errore nel listener degli impegni:", error);
                     showError("Impossibile caricare gli impegni.");
-                    resolve(); // Risolve comunque per non bloccare l'app
+                    resolve();
                 });
             });
         }
@@ -552,7 +620,6 @@
                 await setDoc(commitmentsDocRef, commitmentsData);
                 console.log("Impegni salvati:", commitmentsData);
                 closeCommitmentsModal();
-                // onSnapshot aggiornerà localCommitments e la UI
             } catch (error) {
                 console.error("Errore salvataggio impegni:", error);
                 showError("Errore nel salvataggio degli impegni.");
@@ -560,7 +627,6 @@
         }
         
         function openCommitmentsModal() {
-            // I dati sono già popolati nel modal dal listener
             commitmentsModalEl.style.display = 'flex';
         }
 
@@ -568,7 +634,6 @@
             commitmentsModalEl.style.display = 'none';
         }
 
-        // Popola la sezione "Impegni" nelle colonne dei giorni
         function renderWeekCommitments() {
             for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
                 const displayEl = document.getElementById(`commitments-display-${dayKey}`);
@@ -736,7 +801,7 @@
             });
 
             populateTasksForWeek(days);
-            renderWeekCommitments(); // Popola gli impegni con i dati in cache
+            renderWeekCommitments();
             lucide.createIcons();
         }
 
@@ -816,7 +881,10 @@
                 const dayOfWeek = dateObj.getDay(); // 0 = Dom, 1 = Lun, ... 6 = Sab
                 const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayOfWeek];
                 
-                if (!dayKey || dayKey === 'sun' || dayKey === 'sat') return;
+                if (!dayKey || dayKey === 'sun' || dayKey === 'sat') {
+                    console.log(`Giorno non valido (${dayKey}) per la data ${dateStr}`);
+                    return;
+                }
 
                 const daySubjects = FIXED_TIMETABLE[dayKey] || [];
                 const uniqueSubjects = [...new Set(daySubjects)];
@@ -862,56 +930,116 @@
             confirmCallback = null;
         }
 
-        // --- Funzioni Assistente AI (Compito singolo) ---
+        // --- Funzioni Assistente AI (ORA CHAT) ---
 
-        function openAiModal(subject, description) {
+        // Aggiunge un messaggio alla finestra della chat
+        function addAiChatMessage(role, content) {
+            // Rimuove il loading bubble se presente
+            const loadingBubble = aiChatMessagesEl.querySelector('.loading');
+            if (loadingBubble) {
+                loadingBubble.remove();
+            }
+
+            const bubble = document.createElement('div');
+            bubble.classList.add('chat-bubble', role);
+            
+            if (content === 'loading') {
+                bubble.classList.add('loading');
+                bubble.innerHTML = `
+                    <span data-lucide="Loader" class="w-4 h-4 animate-spin"></span>
+                    <span class="ml-2 text-sm">L'assistente sta pensando...</span>
+                `;
+                lucide.createIcons({ nodes: [bubble] });
+            } else if (content.startsWith('error:')) {
+                bubble.classList.add('bg-red-100', 'text-red-700'); // Stile errore
+                bubble.textContent = content.substring(6).trim();
+            } else {
+                // Formattazione HTML base per la risposta del modello
+                let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                formattedContent = formattedContent.replace(/ \*(.*?)(?:\n|$)/g, '<li>$1</li>');
+                formattedContent = formattedContent.replace(/(\r\n|\n|\r)/gm, '<br>');
+                bubble.innerHTML = formattedContent;
+            }
+            
+            aiChatMessagesEl.appendChild(bubble);
+            aiChatMessagesEl.scrollTop = aiChatMessagesEl.scrollHeight;
+        }
+
+
+        // Avvia una nuova sessione di chat
+        async function openAiModal(subject, description) {
             if (isAiCallPending) return;
             
             aiModalEl.style.display = 'flex';
-            aiModalContentEl.innerHTML = `
-                <div class="flex items-center justify-center p-4">
-                    <span data-lucide="Loader" class="w-6 h-6 text-blue-500 animate-spin"></span>
-                    <p class="ml-3 text-gray-600">L'assistente sta cercando informazioni...</p>
-                </div>
-            `;
-            lucide.createIcons({ nodes: [aiModalContentEl] });
+            aiChatMessagesEl.innerHTML = ''; // Pulisci la chat
+            currentAiChatHistory = []; // Resetta la cronologia
+            aiChatInputEl.value = '';
+            
+            // Aggiungi un loading bubble
+            addAiChatMessage('model', 'loading');
+            
+            const initialPrompt = `Il mio compito è:
+- Materia: ${subject}
+- Descrizione: ${description}
 
-            callGeminiApi(subject, description);
+Forniscimi la spiegazione e i consigli pratici (rispondi in HTML).`;
+            
+            // Avvia la chat
+            await callGeminiChatApi(initialPrompt, true);
         }
 
         function closeAiModal() {
             aiModalEl.style.display = 'none';
-            aiModalContentEl.innerHTML = '';
+            aiChatMessagesEl.innerHTML = '';
+            currentAiChatHistory = [];
+            isAiCallPending = false;
+        }
+        
+        // Gestisce l'invio di un nuovo messaggio
+        async function handleAiChatSubmit(e) {
+            e.preventDefault();
+            const userText = aiChatInputEl.value.trim();
+            if (!userText || isAiCallPending) return;
+            
+            aiChatInputEl.value = '';
+            aiChatInputEl.disabled = true;
+            aiChatSubmitEl.disabled = true;
+            
+            addAiChatMessage('user', userText);
+            addAiChatMessage('model', 'loading');
+            
+            await callGeminiChatApi(userText, false);
         }
 
-        async function callGeminiApi(subject, description) {
+        // Funzione principale che chiama l'API
+        async function callGeminiChatApi(userPromptText, isFirstMessage = false) {
             isAiCallPending = true;
 
             const systemPrompt = `Sei un assistente tutor (per una studentessa di scuola media o superiore in Italia).
 Rispondi sempre in italiano.
-Il tuo compito è analizzare il compito assegnato e fornire supporto.
+La tua risposta deve essere una continuazione di una chat.
 Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li> e grassetto <strong>).
 
-La tua risposta deve essere strutturata in 2 parti:
+Se è il primo messaggio, rispondi con:
 1.  **Breve Spiegazione:** Una spiegazione concisa (massimo 2-3 frasi) dell'argomento principale.
-2.  **Consigli Pratici:** Una lista puntata (massimo 3-4 punti) con consigli pratici e specifici per *come* svolgere quel compito.`;
-            
-            const userQuery = `Il mio compito è:
-- Materia: ${subject}
-- Descrizione: ${description}
+2.  **Consigli Pratici:** Una lista puntata (massimo 3-4 punti) con consigli pratici e specifici.
 
-Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggiornate (usa la ricerca se necessario).`;
+Per i messaggi successivi, rispondi in modo conciso alla domanda dell'utente, mantenendo il contesto della chat.
+Usa la ricerca se necessario per rispondere alle domande.`;
             
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            // Aggiungi il prompt dell'utente alla cronologia
+            currentAiChatHistory.push({ role: 'user', parts: [{ text: userPromptText }] });
 
             const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
+                contents: currentAiChatHistory,
                 tools: [{ "google_search": {} }],
                 systemInstruction: {
                     parts: [{ text: systemPrompt }]
                 },
             };
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -923,18 +1051,23 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 const result = await response.json();
                 
                 if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                    let text = result.candidates[0].content.parts[0].text;
-                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    text = text.replace(/ \*(.*?)/g, '<li>$1</li>');
-                    aiModalContentEl.innerHTML = text;
+                    const modelText = result.candidates[0].content.parts[0].text;
+                    currentAiChatHistory.push({ role: 'model', parts: [{ text: modelText }] });
+                    addAiChatMessage('model', modelText);
                 } else {
-                    aiModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato una risposta valida. Riprova.</p>';
+                    addAiChatMessage('model', 'error: Non ho trovato una risposta valida. Riprova.');
+                    // Rimuovi l'ultimo prompt dell'utente dalla cronologia se l'AI fallisce
+                    currentAiChatHistory.pop();
                 }
             } catch (error) {
                 console.error("Errore chiamata AI:", error);
-                aiModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel contattare l'assistente: ${error.message}</p>`;
+                addAiChatMessage('model', `error: C'è stato un errore: ${error.message}`);
+                currentAiChatHistory.pop();
             } finally {
                 isAiCallPending = false;
+                aiChatInputEl.disabled = false;
+                aiChatSubmitEl.disabled = false;
+                aiChatInputEl.focus();
             }
         }
         
@@ -962,8 +1095,8 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
         
         async function callGeminiPlannerApi() {
             isAiCallPending = true;
+            openAiPlannerButtonEl.disabled = true;
 
-            // 1. Raccogli i compiti *non completati* per la settimana corrente
             const days = getWeekDays(currentWeekStart);
             const dateStrings = days.map(day => formatDate(day.date));
             const tasksForWeek = [];
@@ -974,7 +1107,6 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 }
             }
             
-            // 1b. Raccogli gli impegni fissi
             const commitmentsForWeek = [];
             for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
                 if (localCommitments[dayKey]) {
@@ -992,10 +1124,10 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 `;
                 lucide.createIcons({ nodes: [aiPlannerModalContentEl] });
                 isAiCallPending = false;
+                openAiPlannerButtonEl.disabled = false;
                 return;
             }
 
-            // 2. Formatta l'orario scolastico
             const formattedTimetable = Object.entries(FIXED_TIMETABLE).map(([dayKey, subjects]) => {
                 const dayName = dayNames[dayKey];
                 const hours = TIMETABLE_HOURS_MAP[dayKey];
@@ -1003,7 +1135,6 @@ Forniscimi la spiegazione e i consigli pratici, basandoti su informazioni aggior
                 return `${dayName}:\n${subjectList}`;
             }).join('\n\n');
             
-            // 3. Prepara i prompt
             const today = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
             const systemPrompt = `Sei un "Tutor di Pianificazione" esperto per studenti italiani.
@@ -1032,8 +1163,7 @@ ${tasksForWeek.join('\n')}
 
 Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispetti i miei impegni fissi e mi permetta di completare i compiti in tempo.`;
 
-            // 4. Chiama l'API (SENZA Google Search)
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -1054,12 +1184,11 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
                 
                 if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
                     let text = result.candidates[0].content.parts[0].text;
-                    // Sostituzioni per formattare l'HTML
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
                     text = text.replace(/### (.*?)\n/g, '<h3>$1</h3>');
                     text = text.replace(/\* (.*?)\n/g, '<li>$1</li>');
-                    text = text.replace(/<ul>\s*<li>/g, '<ul><li>'); // Pulisce spazi
-                    text = text.replace(/<\/li>\s*<\/ul>/g, '</li></ul>'); // Pulisce spazi
+                    text = text.replace(/<ul>\s*<li>/g, '<ul><li>');
+                    text = text.replace(/<\/li>\s*<\/ul>/g, '</li></ul>');
                     aiPlannerModalContentEl.innerHTML = text;
                 } else {
                     aiPlannerModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato un piano valido. Riprova.</p>';
@@ -1069,6 +1198,7 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
                 aiPlannerModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel creare il piano: ${error.message}</p>`;
             } finally {
                 isAiCallPending = false;
+                openAiPlannerButtonEl.disabled = false;
             }
         }
 
@@ -1158,8 +1288,9 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
                 closeConfirm();
             });
             
-            // Modal AI (Compito singolo)
+            // Modal AI (Chat)
             closeAiModalButtonEl.addEventListener('click', closeAiModal);
+            aiChatFormEl.addEventListener('submit', handleAiChatSubmit);
             
             // Modal AI Planner
             openAiPlannerButtonEl.addEventListener('click', openAiPlannerModal);
