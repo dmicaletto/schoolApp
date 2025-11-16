@@ -415,6 +415,7 @@
         let localCommitments = {}; // Cache locale per Impegni
         let isAiCallPending = false;
         let currentAiChatHistory = []; // Cronologia della chat AI
+        let currentAiTaskId = null; // ID del compito di cui è aperta la chat
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -534,7 +535,7 @@
             weekGridEl.style.display = 'block';
             
             await attachCommitmentsListener(); 
-            renderWeekDisplay(currentWeekStart);
+            // renderWeekDisplay è ora chiamato da attachCommitmentsListener
             await attachTaskListener();
         }
 
@@ -620,12 +621,13 @@
                         }
                     }
                     
-                    renderWeekCommitments();
+                    // Ridisegna la settimana ora che abbiamo gli impegni
+                    renderWeekDisplay(currentWeekStart);
                     resolve();
                 }, (error) => {
                     console.error("Errore nel listener degli impegni:", error);
                     showError("Impossibile caricare gli impegni.");
-                    resolve();
+                    resolve(); // Risolvi comunque per non bloccare l'app
                 });
             });
         }
@@ -645,6 +647,7 @@
                 await setDoc(commitmentsDocRef, commitmentsData);
                 console.log("Impegni salvati:", commitmentsData);
                 closeCommitmentsModal();
+                // Il listener onSnapshot aggiornerà automaticamente la UI
             } catch (error) {
                 console.error("Errore salvataggio impegni:", error);
                 showError("Errore nel salvataggio degli impegni.");
@@ -652,6 +655,13 @@
         }
         
         function openCommitmentsModal() {
+            // Assicura che il modal sia popolato con i dati più recenti
+            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
+                const inputEl = document.getElementById(`commit-${dayKey}`);
+                if (inputEl) {
+                    inputEl.value = localCommitments[dayKey] || '';
+                }
+            }
             commitmentsModalEl.style.display = 'flex';
         }
 
@@ -686,6 +696,7 @@
                 querySnapshot.forEach((doc) => {
                     allTasks[doc.id] = doc.data();
                 });
+                // Ridisegna la settimana con i compiti aggiornati
                 renderWeekDisplay(currentWeekStart); 
             }, (error) => {
                 console.error("Errore nel listener dei compiti:", error);
@@ -697,18 +708,34 @@
             e.preventDefault();
             if (!userId) return;
             const id = taskIdEl.value;
-            const taskData = {
-                subject: taskFormEl.subject.value,
-                description: taskFormEl.description.value,
-                dueDate: taskFormEl.dueDate.value,
-                completed: taskFormEl.querySelector(`#task-${id}`)?.dataset.completed === 'true' || false
-            };
+            let taskData;
+            
+            if (id && allTasks[id]) {
+                // Aggiornamento
+                taskData = {
+                    ...allTasks[id], // Mantiene i dati esistenti (come aiChatHistory)
+                    subject: taskFormEl.subject.value,
+                    description: taskFormEl.description.value,
+                    dueDate: taskFormEl.dueDate.value,
+                };
+            } else {
+                // Creazione
+                taskData = {
+                    subject: taskFormEl.subject.value,
+                    description: taskFormEl.description.value,
+                    dueDate: taskFormEl.dueDate.value,
+                    completed: false,
+                    aiChatHistory: [] // NUOVO: Inizializza la cronologia chat
+                };
+            }
             
             try {
                 if (id) {
+                    // Aggiorna compito esistente
                     const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
                     await updateDoc(taskDocRef, taskData);
                 } else {
+                    // Crea nuovo compito
                     const tasksCollectionRef = collection(db, "artifacts", appId, "users", userId, "tasks");
                     await addDoc(tasksCollectionRef, taskData);
                 }
@@ -718,6 +745,7 @@
                 showError("Impossibile salvare il compito.");
             }
         }
+
 
         function handleEditTask(id) {
             const task = allTasks[id];
@@ -826,7 +854,7 @@
             });
 
             populateTasksForWeek(days);
-            renderWeekCommitments();
+            renderWeekCommitments(); // Assicura che gli impegni siano visibili
             lucide.createIcons();
         }
 
@@ -873,7 +901,8 @@
             aiButton.className = 'p-1 rounded-full hover:bg-blue-100';
             aiButton.title = 'Assistente AI';
             aiButton.innerHTML = `<span data-lucide="Sparkles" class="text-blue-500 hover:text-blue-700" width="16" height="16"></span>`;
-            aiButton.addEventListener('click', () => openAiModal(data.subject, data.description));
+            // MODIFICATO: Passa l'ID del compito alla funzione
+            aiButton.addEventListener('click', () => openAiModal(id, data.subject, data.description));
             
             const deleteButton = document.createElement('button');
             deleteButton.className = 'p-1 rounded-full hover:bg-red-100';
@@ -955,7 +984,7 @@
             confirmCallback = null;
         }
 
-        // --- Funzioni Assistente AI (ORA CHAT) ---
+        // --- Funzioni Assistente AI (ORA CON MEMORIA PERSISTENTE) ---
 
         // Aggiunge un messaggio alla finestra della chat
         function addAiChatMessage(role, content) {
@@ -980,9 +1009,17 @@
                 bubble.textContent = content.substring(6).trim();
             } else {
                 // Formattazione HTML base per la risposta del modello
-                let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                formattedContent = formattedContent.replace(/ \*(.*?)(?:\n|$)/g, '<li>$1</li>');
-                formattedContent = formattedContent.replace(/(\r\n|\n|\r)/gm, '<br>');
+                // Converte markdown base in HTML
+                let formattedContent = content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Grassetto
+                    .replace(/\* (.*?)(?=\n|$)/g, '<li>$1</li>') // Liste puntate
+                    .replace(/(<\/li>)+/g, '</li>') // Pulisci liste
+                    .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>') // Metti <ul>
+                    .replace(/<\/ul>\n<ul>/g, '') // Unisci liste adiacenti
+                    .replace(/(\r\n|\n|\r)/g, '<br>') // A capo
+                    .replace(/<br><ul>/g, '<ul>') // Pulisci
+                    .replace(/<\/ul><br>/g, '</ul>');
+                    
                 bubble.innerHTML = formattedContent;
             }
             
@@ -991,32 +1028,49 @@
         }
 
 
-        // Avvia una nuova sessione di chat
-        async function openAiModal(subject, description) {
+        // Avvia una nuova sessione di chat o CARICA quella esistente
+        async function openAiModal(taskId, subject, description) {
             if (isAiCallPending) return;
             
+            currentAiTaskId = taskId; // Imposta l'ID del compito corrente
+            const task = allTasks[taskId];
+            
             aiModalEl.style.display = 'flex';
-            aiChatMessagesEl.innerHTML = ''; // Pulisci la chat
-            currentAiChatHistory = []; // Resetta la cronologia
+            aiChatMessagesEl.innerHTML = '';
             aiChatInputEl.value = '';
             
-            // Aggiungi un loading bubble
-            addAiChatMessage('model', 'loading');
-            
-            const initialPrompt = `Il mio compito è:
+            const savedHistory = (task && task.aiChatHistory) ? task.aiChatHistory : [];
+
+            if (savedHistory.length > 0) {
+                // Carica la cronologia salvata
+                console.log("Caricamento cronologia chat:", savedHistory);
+                currentAiChatHistory = [...savedHistory];
+                currentAiChatHistory.forEach(message => {
+                    addAiChatMessage(message.role, message.parts[0].text);
+                });
+                aiChatMessagesEl.scrollTop = aiChatMessagesEl.scrollHeight;
+            } else {
+                // Avvia una nuova chat (è la prima volta)
+                console.log("Avvio nuova chat per il compito:", taskId);
+                currentAiChatHistory = []; // Resetta la cronologia
+                addAiChatMessage('model', 'loading');
+                
+                const initialPrompt = `Il mio compito è:
 - Materia: ${subject}
 - Descrizione: ${description}
 
 Forniscimi la spiegazione e i consigli pratici (rispondi in HTML).`;
-            
-            // Avvia la chat
-            await callGeminiChatApi(initialPrompt, true);
+                
+                // Avvia la chat
+                await callGeminiChatApi(initialPrompt, true);
+            }
         }
 
         function closeAiModal() {
             aiModalEl.style.display = 'none';
             aiChatMessagesEl.innerHTML = '';
             currentAiChatHistory = [];
+            currentAiTaskId = null; // Resetta l'ID del compito
             isAiCallPending = false;
         }
         
@@ -1024,7 +1078,7 @@ Forniscimi la spiegazione e i consigli pratici (rispondi in HTML).`;
         async function handleAiChatSubmit(e) {
             e.preventDefault();
             const userText = aiChatInputEl.value.trim();
-            if (!userText || isAiCallPending) return;
+            if (!userText || isAiCallPending || !currentAiTaskId) return;
             
             aiChatInputEl.value = '';
             aiChatInputEl.disabled = true;
@@ -1034,6 +1088,19 @@ Forniscimi la spiegazione e i consigli pratici (rispondi in HTML).`;
             addAiChatMessage('model', 'loading');
             
             await callGeminiChatApi(userText, false);
+        }
+
+        // Salva la cronologia chat su Firebase
+        async function saveAiChatHistory() {
+            if (!currentAiTaskId || !userId) return;
+            
+            try {
+                const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", currentAiTaskId);
+                await updateDoc(taskDocRef, { aiChatHistory: currentAiChatHistory });
+                console.log("Cronologia chat salvata per il compito:", currentAiTaskId);
+            } catch (error) {
+                console.error("Errore salvataggio cronologia chat:", error);
+            }
         }
 
         // Funzione principale che chiama l'API
@@ -1052,8 +1119,10 @@ Se è il primo messaggio, rispondi con:
 Per i messaggi successivi, rispondi in modo conciso alla domanda dell'utente, mantenendo il contesto della chat.
 Usa la ricerca se necessario per rispondere alle domande.`;
             
-            // Aggiungi il prompt dell'utente alla cronologia
-            currentAiChatHistory.push({ role: 'user', parts: [{ text: userPromptText }] });
+            // Aggiungi il prompt dell'utente alla cronologia (solo se non è il messaggio di sistema iniziale)
+            if (!isFirstMessage || currentAiChatHistory.length === 0) {
+                 currentAiChatHistory.push({ role: 'user', parts: [{ text: userPromptText }] });
+            }
 
             const payload = {
                 contents: currentAiChatHistory,
@@ -1062,6 +1131,11 @@ Usa la ricerca se necessario per rispondere alle domande.`;
                     parts: [{ text: systemPrompt }]
                 },
             };
+            
+            // Gestione speciale per il primo messaggio
+            if (isFirstMessage) {
+                payload.contents = [{ role: 'user', parts: [{ text: userPromptText }] }];
+            }
 
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -1077,8 +1151,15 @@ Usa la ricerca se necessario per rispondere alle domande.`;
                 
                 if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
                     const modelText = result.candidates[0].content.parts[0].text;
+                    
+                    // Se era il primo messaggio, ora salviamo sia il prompt che la risposta
+                    if (isFirstMessage) {
+                        currentAiChatHistory.push({ role: 'user', parts: [{ text: userPromptText }] });
+                    }
                     currentAiChatHistory.push({ role: 'model', parts: [{ text: modelText }] });
+                    
                     addAiChatMessage('model', modelText);
+                    await saveAiChatHistory(); // Salva la cronologia aggiornata
                 } else {
                     addAiChatMessage('model', 'error: Non ho trovato una risposta valida. Riprova.');
                     // Rimuovi l'ultimo prompt dell'utente dalla cronologia se l'AI fallisce
@@ -1120,7 +1201,7 @@ Usa la ricerca se necessario per rispondere alle domande.`;
         
         async function callGeminiPlannerApi() {
             isAiCallPending = true;
-            // Disabilita il pulsante nel menu se esiste (prevenzione)
+            // Disabilita il pulsante nel menu
             const menuAiPlannerEl = document.getElementById('menuAiPlanner');
             if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'none';
 
@@ -1211,11 +1292,15 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
                 
                 if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
                     let text = result.candidates[0].content.parts[0].text;
+                    // Formattazione HTML base
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    text = text.replace(/### (.*?)\n/g, '<h3>$1</h3>');
-                    text = text.replace(/\* (.*?)\n/g, '<li>$1</li>');
-                    text = text.replace(/<ul>\s*<li>/g, '<ul><li>');
-                    text = text.replace(/<\/li>\s*<\/ul>/g, '</li></ul>');
+                    text = text.replace(/### (.*?)(?:\n|$)/g, '<h3>$1</h3>');
+                    text = text.replace(/\* (.*?)(?:\n|$)/g, '<li>$1</li>');
+                    text = text.replace(/(\r\n|\n|\r)/g, '<br>');
+                    text = text.replace(/<br><li>/g, '<li>');
+                    text = text.replace(/<li>/g, '<ul><li>');
+                    text = text.replace(/<\/li><br>/g, '</li></ul>');
+                    text = text.replace(/<\/li><\/ul><ul><li>/g, '</li><li>'); // Unisci liste
                     aiPlannerModalContentEl.innerHTML = text;
                 } else {
                     aiPlannerModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato un piano valido. Riprova.</p>';
@@ -1236,7 +1321,9 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
             const d = new Date(date);
             const day = d.getDay();
             const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.setDate(diff));
+            const newDate = new Date(d.setDate(diff));
+            newDate.setHours(0, 0, 0, 0); // Azzera l'ora per evitare problemi di fuso orario
+            return newDate;
         }
 
         function getWeekDays(startDate) {
@@ -1295,7 +1382,6 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
             document.getElementById('todayBtn').addEventListener('click', () => {
                 currentWeekStart = getStartOfWeek(new Date());
                 renderWeekDisplay(currentWeekStart);
-                lucide.createIcons();
             });
 
             // Modal Compiti
