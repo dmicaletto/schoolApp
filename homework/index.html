@@ -197,21 +197,33 @@
                         </button>
                     </div>
                 </div>
-                <!-- Pulsanti Azione -->
-                <div class="flex flex-wrap justify-center gap-2 mt-4 sm:mt-0">
-                    <button id="openAiPlannerButton" class="px-4 py-2 text-base font-medium text-purple-600 bg-purple-100 rounded-lg shadow-sm hover:bg-purple-200 transition">
-                        AI Planner
-                    </button>
+                
+                <!-- Pulsanti Azione (Con Menu Dropdown) -->
+                <div class="flex items-center gap-2 mt-4 sm:mt-0">
                     <button id="todayBtn" class="px-4 py-2 text-base font-medium text-blue-600 bg-blue-100 rounded-lg shadow-sm hover:bg-blue-200 transition">
                         Oggi
                     </button>
-                    <!-- Pulsante Impegni -->
-                    <button id="openCommitmentsButton" class="px-4 py-2 text-base font-medium text-green-600 bg-green-100 rounded-lg shadow-sm hover:bg-green-200 transition">
-                        Impegni
-                    </button>
-                    <button id="openTimetableButton" class="px-4 py-2 text-base font-medium text-gray-700 bg-gray-100 rounded-lg shadow-sm hover:bg-gray-200 transition">
-                        Orario
-                    </button>
+                    
+                    <!-- Nuovo Menu Dropdown -->
+                    <div class="relative">
+                        <button id="menuButton" class="p-2 rounded-lg hover:bg-gray-100 shadow-sm border border-gray-200">
+                            <span data-lucide="Menu" class="w-5 h-5 text-gray-700"></span>
+                        </button>
+                        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-100">
+                            <a href="#" id="menuAiPlanner" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="Wand2" class="w-4 h-4 text-purple-500"></span>
+                                AI Planner
+                            </a>
+                            <a href="#" id="menuCommitments" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="CalendarCheck" class="w-4 h-4 text-green-500"></span>
+                                Impegni
+                            </a>
+                            <a href="#" id="menuTimetable" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="Clock" class="w-4 h-4 text-gray-500"></span>
+                                Orario
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -435,14 +447,16 @@
         // Modal AI Planner
         const aiPlannerModalEl = document.getElementById('aiPlannerModal');
         const aiPlannerModalContentEl = document.getElementById('aiPlannerModalContent');
-        const openAiPlannerButtonEl = document.getElementById('openAiPlannerButton');
         const closeAiPlannerModalButtonEl = document.getElementById('closeAiPlannerModalButton');
         
         // Modal Impegni
         const commitmentsModalEl = document.getElementById('commitmentsModal');
         const commitmentsFormEl = document.getElementById('commitmentsForm');
-        const openCommitmentsButtonEl = document.getElementById('openCommitmentsButton');
         const closeCommitmentsModalButtonEl = document.getElementById('closeCommitmentsModalButton');
+        
+        // Nuovo Menu
+        const menuButton = document.getElementById('menuButton');
+        const dropdownMenu = document.getElementById('dropdownMenu');
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -459,7 +473,7 @@
         const app = initializeApp(firebaseConfig);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
+
         // --- LOGICA ORARIO FISSO ---
         const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
         
@@ -1106,7 +1120,9 @@ Usa la ricerca se necessario per rispondere alle domande.`;
         
         async function callGeminiPlannerApi() {
             isAiCallPending = true;
-            openAiPlannerButtonEl.disabled = true;
+            // Disabilita il pulsante nel menu se esiste (prevenzione)
+            const menuAiPlannerEl = document.getElementById('menuAiPlanner');
+            if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'none';
 
             const days = getWeekDays(currentWeekStart);
             const dateStrings = days.map(day => formatDate(day.date));
@@ -1135,7 +1151,7 @@ Usa la ricerca se necessario per rispondere alle domande.`;
                 `;
                 lucide.createIcons({ nodes: [aiPlannerModalContentEl] });
                 isAiCallPending = false;
-                openAiPlannerButtonEl.disabled = false;
+                if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'auto';
                 return;
             }
 
@@ -1209,7 +1225,7 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
                 aiPlannerModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel creare il piano: ${error.message}</p>`;
             } finally {
                 isAiCallPending = false;
-                openAiPlannerButtonEl.disabled = false;
+                if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'auto';
             }
         }
 
@@ -1287,7 +1303,6 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
             taskFormEl.addEventListener('submit', handleSaveTask);
 
             // Modal Orario (Visualizzazione)
-            document.getElementById('openTimetableButton').addEventListener('click', openTimetableModal);
             document.getElementById('closeViewTimetableModalButton').addEventListener('click', closeTimetableModal);
             
             // Modal Conferma
@@ -1304,13 +1319,40 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
             aiChatFormEl.addEventListener('submit', handleAiChatSubmit);
             
             // Modal AI Planner
-            openAiPlannerButtonEl.addEventListener('click', openAiPlannerModal);
             closeAiPlannerModalButtonEl.addEventListener('click', closeAiPlannerModal);
             
             // Modal Impegni
-            openCommitmentsButtonEl.addEventListener('click', openCommitmentsModal);
             closeCommitmentsModalButtonEl.addEventListener('click', closeCommitmentsModal);
             commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
+
+            // Nuovo Menu Dropdown
+            document.getElementById('menuAiPlanner').addEventListener('click', (e) => {
+                e.preventDefault();
+                openAiPlannerModal();
+                dropdownMenu.classList.add('hidden');
+            });
+            document.getElementById('menuCommitments').addEventListener('click', (e) => {
+                e.preventDefault();
+                openCommitmentsModal();
+                dropdownMenu.classList.add('hidden');
+            });
+            document.getElementById('menuTimetable').addEventListener('click', (e) => {
+                e.preventDefault();
+                openTimetableModal();
+                dropdownMenu.classList.add('hidden');
+            });
+
+            menuButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Impedisce al click di chiudere subito il menu
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Chiudi il menu se si clicca altrove
+            window.addEventListener('click', (e) => {
+                if (!menuButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.add('hidden');
+                }
+            });
 
             // Avvia l'app
             initializeFirebase();
