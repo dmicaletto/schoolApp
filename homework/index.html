@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js per il grafico (Aggiunto per Punto 2) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         /* Stile per la scrollbar orizzontale (sottile e grigia) */
@@ -139,6 +141,37 @@
         #timetableModalTable tbody tr:nth-child(odd) {
             background-color: #F9FAFB; /* Grigio chiaro alternato */
         }
+        
+        /* Stili Premio */
+        #prizeSection {
+            display: none; /* Nascosto di default */
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(145deg, #fef9c3, #fafad2);
+            border: 2px dashed #facc15;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        #prizeSection::before {
+            content: '🎉';
+            position: absolute;
+            top: -10px; left: 10px;
+            font-size: 24px;
+            animation: confetti 1.5s infinite;
+        }
+        #prizeSection::after {
+            content: '✨';
+            position: absolute;
+            bottom: -5px; right: 15px;
+            font-size: 20px;
+            animation: confetti 1.7s infinite 0.3s;
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-50px) rotate(360deg); opacity: 0; }
+        }
+
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -171,7 +204,7 @@
 
                 <!-- Pulsanti Azione (Destra) -->
                 <div class="flex items-center gap-2">
-                    <!-- Tasto "Oggi" rimosso come da richiesta -->
+                    <!-- Tasto "Oggi" rimosso -->
                     
                     <!-- Menu Dropdown -->
                     <div class="relative" id="menuContainer">
@@ -194,6 +227,10 @@
                             <a id="openTimetableButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
                                 <span data-lucide="BookOpen" class="w-5 h-5 text-blue-600"></span>
                                 Orario
+                            </a>
+                            <a id="openProgressButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-t">
+                                <span data-lucide="PieChart" class="w-5 h-5 text-yellow-600"></span>
+                                Progressi
                             </a>
                         </div>
                     </div>
@@ -350,6 +387,55 @@
         </div>
     </div>
 
+    <!-- 10. Modal Progressi e Statistiche (Aggiunto per Punto 2) -->
+    <div id="progressModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span data-lucide="PieChart" class="w-5 h-5 text-yellow-600"></span>
+                Progressi e Statistiche
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Colonna Statistiche -->
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-semibold text-md mb-2">Progressi di Oggi</h3>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600">Compiti completati oggi:</p>
+                            <p id="dailyStats" class="text-2xl font-bold text-gray-800">0 / 0</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-md mb-2">Progressi Settimana</h3>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <p class="text-sm text-gray-600">Compiti completati (settimana corrente):</p>
+                            <p id="weeklyStats" class="text-2xl font-bold text-gray-800">0 / 0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Colonna Grafico -->
+                <div class="flex flex-col items-center justify-center">
+                    <h3 class="font-semibold text-md mb-2">Panoramica Settimana</h3>
+                    <div class="w-full max-w-[200px] h-[200px]">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sezione Premio -->
+            <div id="prizeSection" class="mt-6">
+                <span data-lucide="Trophy" class="w-12 h-12 text-yellow-500 mx-auto"></span>
+                <h3 class="text-xl font-bold text-yellow-800 mt-2">Settimana Completata!</h3>
+                <p class="text-yellow-700">Ottimo lavoro, hai finito tutti i compiti!</p>
+            </div>
+            
+            <div class="flex justify-end mt-6 pt-4 border-t">
+                <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Firebase e Script App -->
     <script type="module">
@@ -427,24 +513,20 @@
         const futureDeadlineFormEl = document.getElementById('futureDeadlineForm');
         const futureDeadlinesListEl = document.getElementById('futureDeadlinesList');
         
+        // Elementi Progressi (Aggiunto per Punto 2)
+        const progressModalEl = document.getElementById('progressModal');
+        const dailyStatsEl = document.getElementById('dailyStats');
+        const weeklyStatsEl = document.getElementById('weeklyStats');
+        const progressChartCanvas = document.getElementById('progressChart');
+        const prizeSectionEl = document.getElementById('prizeSection');
+        let progressChartInstance = null;
+        
         const menuContainer = document.getElementById('menuContainer');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const menuDropdown = document.getElementById('menuDropdown');
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Orario Fisso ---
@@ -623,6 +705,7 @@
         }
         
         async function getCommitments() {
+            if (!userId) return {}; // Aggiunto controllo per userId
             const commitmentDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
             const docSnap = await getDoc(commitmentDocRef);
             return docSnap.exists() ? docSnap.data() : {};
@@ -741,13 +824,13 @@
                 const timetableHtml = generateTimetableHTML(dayKey);
                 
                 const commitmentHtml = commitments[dayKey] 
-                    ? `<p class="text-xs text-gray-800 font-medium">${commitments[dayKey]}</p>` 
+                    ? `<p class="text-xs text-gray-800 font-medium break-words">${commitments[dayKey]}</p>` 
                     : '<p class="text-xs text-gray-400 italic">Nessun impegno</p>';
                     
                 const radarHtml = generateRadarHTML(day.date);
 
                 const dayCard = document.createElement('div');
-                dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${dateStr === todayStr ? 'border-2 border-blue-500' : ''}`;
+                dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${dateStr === todayStr ? 'border-2 border-blue-500' : 'border border-transparent'}`;
                 dayCard.id = `day-${dateStr}`;
                 
                 dayCard.innerHTML = `
@@ -788,7 +871,7 @@
                 button.addEventListener('click', (e) => {
                     const date = e.currentTarget.dataset.date;
                     const dayKey = e.currentTarget.dataset.daykey;
-                    openModalNewTask(date, dayKey); // Chiama la nuova funzione specifica
+                    openModalNewTask(date, dayKey);
                 });
             });
 
@@ -881,7 +964,7 @@
             const contentDiv = document.createElement('div');
             contentDiv.className = 'flex-1 cursor-pointer min-w-0';
             contentDiv.innerHTML = `
-                <p class="font-semibold text-sm truncate ${data.completed ? 'text-green-800 line-through' : 'text-gray-800'}">${data.subject}</p>
+                <p class="font-semibold text-sm ${data.completed ? 'text-green-800 line-through' : 'text-gray-800'}">${data.subject}</p>
                 <p class="text-xs break-words ${data.completed ? 'text-green-600 line-through' : 'text-gray-600'}">${data.description}</p>
             `;
             contentDiv.addEventListener('click', () => handleEditTask(id));
@@ -940,19 +1023,27 @@
             }
         }
 
+        // CORREZIONE BUG: Funzione per gestire la modifica
         function handleEditTask(id) {
             const task = allTasks[id];
             if (!task) return;
             
+            // Trova il 'dayKey' (mon, tue, ...) dalla data del compito
             const dayKey = getDayKeyFromDate(task.dueDate);
+            
+            // Popola il dropdown con le materie di quel giorno
+            // e assicurati che la materia attuale sia selezionata
             populateSubjectDropdown(dayKey, task.subject);
 
+            // Imposta i valori nel form
             modalTitleEl.innerText = "Modifica Compito";
             taskIdEl.value = id;
             taskFormEl.subject.value = task.subject;
             taskFormEl.description.value = task.description;
             taskFormEl.dueDate.value = task.dueDate;
-            openModal(taskModalEl); // Apre il modal senza resettare
+            
+            // Apri il modal
+            openModal(taskModalEl);
         }
         
         function populateSubjectDropdown(dayKey, currentSubject = null) {
@@ -1044,7 +1135,7 @@
         }
         
         async function callGeminiChatApi(useSearch) {
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const payload = {
@@ -1134,8 +1225,9 @@
             const today = new Date();
             const startOfCurrentWeek = getStartOfWeek(currentWeekStart);
             
+            // Finestra estesa per i compiti
             const endOfTaskWindow = new Date(startOfCurrentWeek);
-            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10);
+            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10); // Guarda 10 giorni avanti
 
             const relevantTasks = Object.values(allTasks).filter(task => {
                 const dueDate = new Date(task.dueDate + 'T00:00:00');
@@ -1194,7 +1286,7 @@
         }
 
         async function callGeminiPlannerChatApi() {
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const payload = {
@@ -1259,13 +1351,87 @@
             const loadingBubble = document.getElementById('ai-planner-loading-bubble');
             if (loadingBubble) loadingBubble.remove();
         }
+        
+        
+        // --- Funzioni Progressi (Punto 2) ---
+        
+        function handleOpenProgressModal() {
+            // 1. Calcola Statistiche
+            const todayStr = formatDate(new Date());
+            const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
+            
+            const allTasksArray = Object.values(allTasks);
+            
+            // Statistiche Giornaliere
+            const todayTasks = allTasksArray.filter(t => t.dueDate === todayStr);
+            const todayCompleted = todayTasks.filter(t => t.completed).length;
+            dailyStatsEl.textContent = `${todayCompleted} / ${todayTasks.length}`;
+            
+            // Statistiche Settimanali
+            const weekTasks = allTasksArray.filter(t => weekDays.includes(t.dueDate));
+            const weekCompleted = weekTasks.filter(t => t.completed).length;
+            weeklyStatsEl.textContent = `${weekCompleted} / ${weekTasks.length}`;
+            
+            // 2. Mostra Premio
+            if (weekTasks.length > 0 && weekCompleted === weekTasks.length) {
+                prizeSectionEl.style.display = 'block';
+            } else {
+                prizeSectionEl.style.display = 'none';
+            }
+            
+            // 3. Renderizza Grafico
+            renderProgressChart(weekCompleted, weekTasks.length - weekCompleted);
+            
+            // 4. Apri Modal
+            openModal(progressModalEl);
+        }
+        
+        function renderProgressChart(completed, pending) {
+            const ctx = progressChartCanvas.getContext('2d');
+            
+            if (progressChartInstance) {
+                progressChartInstance.destroy();
+            }
+            
+            progressChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completati', 'Da Fare'],
+                    datasets: [{
+                        data: [completed, pending],
+                        backgroundColor: [
+                            '#22C55E', // green-500
+                            '#E5E7EB'  // gray-200
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
+                    }
+                }
+            });
+        }
 
 
         // --- Funzioni Modal (Finestre Popup) ---
         
-        // CORREZIONE: Funzione separata per "Nuovo Compito"
         function openModalNewTask(defaultDate, dayKey) {
-            taskFormEl.reset(); // Resetta il form
+            taskFormEl.reset();
             modalTitleEl.innerText = "Nuovo Compito";
             taskIdEl.value = '';
             
@@ -1333,7 +1499,6 @@
             return days;
         }
 
-        // Correzione Bug Fuso Orario
         function formatDate(date) {
             const d = new Date(date);
             const year = d.getFullYear();
@@ -1343,8 +1508,8 @@
         }
         
         function getDayKeyFromDate(dateStr) {
-            const date = new Date(dateStr + 'T00:00:00');
-            const dayIndex = date.getDay();
+            const date = new Date(dateStr + 'T00:00:00'); // Usa T00:00:00 per fuso orario locale
+            const dayIndex = date.getDay(); // 0=Dom, 1=Lun,...
             const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             return dayKeys[dayIndex];
         }
@@ -1384,8 +1549,6 @@
                 renderWeekDisplay(currentWeekStart);
             });
             
-            // Pulsante "Oggi" Rimosso
-            
             // Gestione Menu Dropdown
             menuToggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1405,6 +1568,7 @@
             document.getElementById('openCommitmentsButton').addEventListener('click', () => openModal(commitmentsModalEl));
             document.getElementById('openFutureDeadlinesButton').addEventListener('click', () => openModal(futureDeadlinesModalEl));
             document.getElementById('openTimetableButton').addEventListener('click', () => openModal(timetableModalEl));
+            document.getElementById('openProgressButton').addEventListener('click', handleOpenProgressModal); // Aggiunto
 
             taskFormEl.addEventListener('submit', handleSaveTask);
             commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
