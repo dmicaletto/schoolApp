@@ -11,33 +11,26 @@
     
     <style>
         /* Stile per la scrollbar orizzontale (sottile e grigia) */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Stili per l'aspetto mobile-first */
         body {
             font-family: 'Inter', sans-serif;
-            overscroll-behavior-x: none; /* Previene il "pull-to-refresh" laterale */
+            overscroll-behavior-x: none;
         }
         
         /* Contenitore per lo scorrimento orizzontale */
         .week-scroll-container {
             display: flex;
             overflow-x: auto;
-            scroll-snap-type: x mandatory; /* Aggancia le colonne during lo scorrimento */
-            -webkit-overflow-scrolling: touch; /* Scrolling fluido su iOS */
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Colonne dei giorni */
         .day-column {
-            flex: 0 0 100%; /* Su mobile, ogni colonna occupa il 90% */
-            scroll-snap-align: start; /* Aggancia l'inizio della colonna */
-            margin-right: 10px;
+            flex: 0 0 90%; /* Su mobile, ogni colonna occupa il 90% */
+            scroll-snap-align: start;
         }
 
         @media (min-width: 640px) { /* sm: */
@@ -82,98 +75,75 @@
             text-align: center;
         }
         
-        /* Stile per il contenuto dei modal AI (per formattare la risposta) */
-        .ai-modal-content p {
-            margin-bottom: 0.75rem; /* 12px */
-            line-height: 1.6;
-        }
-        .ai-modal-content ul {
-            list-style-type: disc;
-            padding-left: 20px;
-            margin-bottom: 0.75rem;
-        }
-        .ai-modal-content li {
-            margin-bottom: 0.25rem; /* 4px */
-        }
-        .ai-modal-content strong, .ai-modal-content h3 {
-            font-weight: 600;
-            color: #1F2937; /* gray-800 */
-            margin-top: 0.5rem;
-            margin-bottom: 0.25rem;
-        }
-
-        /* --- Stili Chat AI --- */
-        .ai-chat-messages {
-            height: 300px; /* Altezza fissa per la chat */
+        /* Stili Chat Generali */
+        .chat-container {
+            height: 350px; /* Altezza fissa per le chat */
             overflow-y: auto;
-            border: 1px solid #e5e7eb; /* gray-200 */
-            border-radius: 8px;
-            padding: 12px;
-            background-color: #f9fafb; /* gray-50 */
         }
         .chat-bubble {
             max-width: 80%;
             padding: 10px 14px;
             border-radius: 16px;
-            margin-bottom: 8px;
-            line-height: 1.5;
-            word-wrap: break-word;
         }
-        .chat-bubble.user {
-            background-color: #3b82f6; /* blue-500 */
+        .chat-bubble-user {
+            background-color: #3B82F6; /* blue-500 */
             color: white;
-            margin-left: auto;
+            align-self: flex-end;
             border-bottom-right-radius: 4px;
         }
-        .chat-bubble.model {
-            background-color: #e5e7eb; /* gray-200 */
-            color: #1f2937; /* gray-800 */
-            margin-right: auto;
+        .chat-bubble-model {
+            background-color: #E5E7EB; /* gray-200 */
+            color: #1F2937; /* gray-800 */
+            align-self: flex-start;
             border-bottom-left-radius: 4px;
         }
-        .chat-bubble.model.loading {
+        .chat-bubble-model.planner { /* Colore custom per planner */
+            background-color: #F3E8FF; /* purple-100 */
+            color: #3730A3; /* purple-800 */
+        }
+        .loading-bubble {
             display: flex;
+            gap: 1.5px;
             align-items: center;
-            justify-content: center;
-            color: #4b5563; /* gray-600 */
         }
-        .ai-chat-input-form {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
         }
-        .ai-chat-input {
-            flex-grow: 1;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db; /* gray-300 */
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+        
+        /* Stili Tabella Orario */
+        #timetableModalTable {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
         }
-        .ai-chat-input:focus {
-            border-color: #3b82f6; /* blue-500 */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        #timetableModalTable table {
+            width: 100%;
+            min-width: 600px; /* Forza lo scorrimento su mobile */
+            border-collapse: collapse;
         }
-        .ai-chat-input:disabled {
-            background-color: #f3f4f6; /* gray-100 */
+        #timetableModalTable th, #timetableModalTable td {
+            border: 1px solid #E5E7EB;
+            padding: 10px;
+            text-align: left;
+            font-size: 0.875rem;
         }
-        .ai-chat-submit {
-            padding: 8px 12px;
-            background-color: #3b82f6; /* blue-500 */
-            color: white;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s;
+        #timetableModalTable th {
+            background-color: #F9FAFB;
         }
-        .ai-chat-submit:hover {
-            background-color: #2563eb; /* blue-600 */
+        #timetableModalTable tbody tr:nth-child(odd) {
+            background-color: #F9FAFB; /* Grigio chiaro alternato */
         }
-        .ai-chat-submit:disabled {
-            background-color: #9ca3af; /* gray-400 */
-            cursor: not-allowed;
+
+        /* Animazione per caricamento */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-        /* --- Fine Stili Chat AI --- */
+
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -182,10 +152,11 @@
     <div class="flex flex-col h-screen">
 
         <!-- 1. Intestazione (Header) -->
-        <header class="p-4 bg-white border-b border-gray-200 sticky top-0 z-10">
-            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
-                <!-- Titolo e Navigazione Settimana -->
-                <div class="flex items-center justify-between w-full sm:w-auto">
+        <header class="p-4 bg-white border-b border-gray-200 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                
+                <!-- Titolo e Navigazione Settimana (Sinistra) -->
+                <div class="flex items-center">
                     <h1 class="text-xl font-bold text-gray-800">Bacheca Compiti</h1>
                     <div class="flex items-center ml-4">
                         <button id="prevWeekBtn" class="p-2 rounded-full hover:bg-gray-100">
@@ -197,29 +168,33 @@
                         </button>
                     </div>
                 </div>
-                
-                <!-- Pulsanti Azione (Con Menu Dropdown) -->
-                <div class="flex items-center gap-2 mt-4 sm:mt-0">
+
+                <!-- Pulsanti Azione (Destra) -->
+                <div class="flex items-center gap-2">
                     <button id="todayBtn" class="px-4 py-2 text-base font-medium text-blue-600 bg-blue-100 rounded-lg shadow-sm hover:bg-blue-200 transition">
                         Oggi
                     </button>
                     
-                    <!-- Nuovo Menu Dropdown -->
-                    <div class="relative">
-                        <button id="menuButton" class="p-2 rounded-lg hover:bg-gray-100 shadow-sm border border-gray-200">
+                    <!-- Menu Dropdown -->
+                    <div class="relative" id="menuContainer">
+                        <button id="menuToggleBtn" class="p-2 rounded-lg hover:bg-gray-100">
                             <span data-lucide="Menu" class="w-5 h-5 text-gray-700"></span>
                         </button>
-                        <div id="dropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-100">
-                            <a href="#" id="menuAiPlanner" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="Wand2" class="w-4 h-4 text-purple-500"></span>
+                        <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border z-50">
+                            <a id="openAiPlannerButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="BrainCircuit" class="w-5 h-5 text-purple-600"></span>
                                 AI Planner
                             </a>
-                            <a href="#" id="menuCommitments" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="CalendarCheck" class="w-4 h-4 text-green-500"></span>
+                            <a id="openCommitmentsButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="CalendarClock" class="w-5 h-5 text-green-600"></span>
                                 Impegni
                             </a>
-                            <a href="#" id="menuTimetable" class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="Clock" class="w-4 h-4 text-gray-500"></span>
+                            <a id="openFutureDeadlinesButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="Target" class="w-5 h-5 text-red-600"></span>
+                                Scadenze Future
+                            </a>
+                            <a id="openTimetableButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                <span data-lucide="BookOpen" class="w-5 h-5 text-blue-600"></span>
                                 Orario
                             </a>
                         </div>
@@ -227,6 +202,11 @@
                 </div>
             </div>
         </header>
+        
+        <!-- Banner Notifiche Scadenze -->
+        <div id="notificationBanner" class="hidden sticky top-[65px] z-20">
+            <!-- Il contenuto verrà generato da JS -->
+        </div>
 
         <!-- Spinner di caricamento principale -->
         <div id="loadingSpinner" class="flex items-center justify-center h-full">
@@ -234,7 +214,7 @@
         </div>
 
         <!-- 2. Bacheca Settimanale (Contenuto) -->
-        <main id="weekGrid" class="flex-1 overflow-hidden p-3 sm:p-4">
+        <main id="weekGrid" class="hidden flex-1 overflow-hidden p-3 sm:p-4">
             <!-- Contenitore con scorrimento orizzontale -->
             <div id="weekScrollContainer" class="week-scroll-container no-scrollbar h-full gap-3">
                 <!-- Le colonne dei giorni (Lunedì-Venerdì) verranno generate qui da JS -->
@@ -251,8 +231,8 @@
                 
                 <div class="mb-4">
                     <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Materia</label>
-                    <select id="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                        <option value="">-- Seleziona Giorno --</option>
+                    <select id="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white" required>
+                        <!-- Opzioni generate da JS -->
                     </select>
                 </div>
                 
@@ -267,29 +247,27 @@
                 </div>
                 
                 <div class="flex justify-end gap-3">
-                    <button type="button" id="closeModalButton" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
+                    <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Salva Compito</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 4. Modal per Visualizzare l'Orario -->
-    <div id="viewTimetableModal" class="modal">
-        <div class="modal-content max-w-3xl">
+    <!-- 4. Modal per Orario Settimanale (Sola lettura) -->
+    <div id="timetableModal" class="modal">
+        <div class="modal-content max-w-3xl"> <!-- Reso più largo per l'orario -->
             <h2 class="text-lg font-semibold mb-4">Orario Settimanale</h2>
-            
-            <div id="viewTimetableModalContent" class="max-h-[70vh] overflow-x-auto overflow-y-auto">
+            <div id="timetableModalTable" class="rounded-lg border">
                 <!-- Tabella orario generata da JS -->
             </div>
-            
-            <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
-                <button type="button" id="closeViewTimetableModalButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Chiudi</button>
+            <div class="flex justify-end mt-6">
+                <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Chiudi</button>
             </div>
         </div>
     </div>
     
-    <!-- 5. Modal di Conferma Eliminazione (Personalizzato) -->
+    <!-- 5. Modal di Conferma Eliminazione -->
     <div id="confirmModal" class="modal" style="z-index: 60;">
         <div class="confirm-modal-content">
             <h3 id="confirmTitle" class="text-lg font-semibold mb-3">Sei sicuro?</h3>
@@ -300,81 +278,94 @@
             </div>
         </div>
     </div>
-    
-    <!-- 6. Modal Assistente AI (ORA CHAT) -->
-    <div id="aiModal" class="modal" style="z-index: 60;">
+
+    <!-- 6. Modal Assistente AI (Chat) -->
+    <div id="aiAssistantModal" class="modal">
         <div class="modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-blue-600">Assistente AI</h2>
-                <button id="closeAiModalButton" class="p-2 rounded-full hover:bg-gray-100">
-                    <span data-lucide="X" class="w-5 h-5 text-gray-600"></span>
-                </button>
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span data-lucide="Sparkles" class="w-5 h-5 text-blue-500"></span>
+                Assistente AI
+            </h2>
+            <!-- Area Chat -->
+            <div id="aiChatHistory" class="chat-container p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4 flex flex-col gap-3">
+                <!-- Messaggi della chat generati da JS -->
             </div>
-            
-            <!-- Contenitore dei messaggi della chat -->
-            <div id="aiChatMessages" class="ai-chat-messages">
-                <!-- I messaggi della chat verranno inseriti qui -->
-            </div>
-            
-            <!-- Form per l'input della chat -->
-            <form id="aiChatForm" class="ai-chat-input-form">
-                <input type="text" id="aiChatInput" class="ai-chat-input" placeholder="Fai una domanda..." autocomplete="off">
-                <button type="submit" id="aiChatSubmit" class="ai-chat-submit">
+            <!-- Input Chat -->
+            <form id="aiChatForm" class="flex gap-2">
+                <input type="text" id="aiChatInput" placeholder="Fai una domanda..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                <button type="submit" id="aiChatSendButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center justify-center">
                     <span data-lucide="Send" class="w-5 h-5"></span>
                 </button>
             </form>
+            <div class="flex justify-end mt-4">
+                 <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Chiudi</button>
+            </div>
         </div>
     </div>
     
-    <!-- 7. Modal AI Planner -->
-    <div id="aiPlannerModal" class="modal" style="z-index: 60;">
-        <div class="modal-content max-w-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-purple-600">Piano di Studio AI</h2>
-                <button id="closeAiPlannerModalButton" class="p-2 rounded-full hover:bg-gray-100">
-                    <span data-lucide="X" class="w-5 h-5 text-gray-600"></span>
+    <!-- 7. Modal AI Planner (NUOVA Chat) -->
+    <div id="aiPlannerModal" class="modal">
+         <div class="modal-content max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span data-lucide="BrainCircuit" class="w-5 h-5 text-purple-600"></span>
+                Piano di Studio AI (Chat)
+            </h2>
+            <!-- Area Chat Planner -->
+            <div id="aiPlannerChatHistory" class="chat-container p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4 flex flex-col gap-3">
+                <!-- Messaggi della chat generati da JS -->
+            </div>
+            <!-- Input Chat Planner -->
+            <form id="aiPlannerChatForm" class="flex gap-2">
+                <input type="text" id="aiPlannerChatInput" placeholder="Modifica il piano..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                <button type="submit" id="aiPlannerChatSendButton" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition flex items-center justify-center">
+                    <span data-lucide="Send" class="w-5 h-5"></span>
                 </button>
-            </div>
-            
-            <div id="aiPlannerModalContent" class="ai-modal-content max-h-[60vh] overflow-y-auto text-gray-700 text-sm">
-                <!-- Contenuto generato dall'AI Planner -->
+            </form>
+             <div class="flex justify-end mt-4">
+                 <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Chiudi</button>
             </div>
         </div>
     </div>
     
-    <!-- 8. Modal per Impegni Settimanali -->
+    <!-- 8. Modal Impegni Settimanali -->
     <div id="commitmentsModal" class="modal">
-        <div class="modal-content max-w-lg">
-            <h2 class="text-lg font-semibold mb-4">Impegni Settimanali Fissi</h2>
+        <div class="modal-content max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4">Impegni Settimanali</h2>
+            <p class="text-sm text-gray-600 mb-4">Inserisci qui i tuoi impegni fissi (es. sport, musica, appuntamenti). L'AI Planner li userà per organizzare lo studio.</p>
             <form id="commitmentsForm">
-                <p class="text-sm text-gray-600 mb-4">Inserisci qui gli impegni pomeridiani fissi (es. sport, musica) per aiutare l'AI a pianificare meglio.</p>
-                <div class="space-y-3">
-                    <div>
-                        <label for="commit-mon" class="block text-sm font-medium text-gray-700">Lunedì</label>
-                        <input type="text" id="commit-mon" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Es. 17:00 - 18:00: Pianoforte">
-                    </div>
-                    <div>
-                        <label for="commit-tue" class="block text-sm font-medium text-gray-700">Martedì</label>
-                        <input type="text" id="commit-tue" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Es. 17:00 - 19:00: Pallavolo">
-                    </div>
-                    <div>
-                        <label for="commit-wed" class="block text-sm font-medium text-gray-700">Mercoledì</label>
-                        <input type="text" id="commit-wed" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="commit-thu" class="block text-sm font-medium text-gray-700">Giovedì</label>
-                        <input type="text" id="commit-thu" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="commit-fri" class="block text-sm font-medium text-gray-700">Venerdì</label>
-                        <input type="text" id="commit-fri" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
+                <div id="commitmentsModalContent" class="space-y-4">
+                    <!-- Input per gli impegni generati da JS -->
                 </div>
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
-                    <button type="button" id="closeCommitmentsModalButton" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
+                    <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Salva Impegni</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 9. Modal Scadenze Future -->
+    <div id="futureDeadlinesModal" class="modal">
+        <div class="modal-content max-w-2xl">
+            <h2 class="text-lg font-semibold mb-4">Radar Scadenze Future</h2>
+            <p class="text-sm text-gray-600 mb-4">Aggiungi qui verifiche, consegne e interrogazioni importanti. L'app te le ricorderà e l'AI le userà per pianificare il ripasso.</p>
+            
+            <!-- Form per Aggiungere Nuova Scadenza -->
+            <form id="futureDeadlineForm" class="flex flex-col sm:flex-row gap-3 mb-6 pb-6 border-b">
+                <input type="text" id="futureDeadlineDescription" placeholder="Descrizione (es. Verifica Latino)" class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                <input type="date" id="futureDeadlineDate" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Aggiungi</button>
+            </form>
+            
+            <!-- Lista Scadenze Esistenti -->
+            <h3 class="text-md font-semibold mb-3">Scadenze Salve</h3>
+            <div id="futureDeadlinesList" class="space-y-2 max-h-[30vh] overflow-y-auto">
+                <!-- Lista generata da JS -->
+            </div>
+            
+            <div class="flex justify-end mt-6 pt-4 border-t">
+                <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Chiudi</button>
+            </div>
         </div>
     </div>
 
@@ -401,6 +392,7 @@
             collection, 
             query, 
             where, 
+            getDocs,
             setLogLevel 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -409,91 +401,81 @@
         let db, auth;
         let userId = null;
         let currentWeekStart = getStartOfWeek(new Date());
-        let allTasks = {};
+        let allTasks = {}; // Cache locale dei compiti
+        let allFutureDeadlines = []; // Cache scadenze future
+        
+        // Listener di Firestore
         let taskUnsubscribe = null;
-        let commitmentsUnsubscribe = null; // Listener per Impegni
-        let localCommitments = {}; // Cache locale per Impegni
-        let isAiCallPending = false;
-        let currentAiChatHistory = []; // Cronologia della chat AI
-        let currentAiTaskId = null; // ID del compito di cui è aperta la chat
+        let commitmentUnsubscribe = null;
+        let futureDeadlinesUnsubscribe = null;
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
         const weekGridEl = document.getElementById('weekGrid');
         const weekScrollContainerEl = document.getElementById('weekScrollContainer');
         const currentWeekDisplayEl = document.getElementById('currentWeekDisplay');
+        const notificationBannerEl = document.getElementById('notificationBanner');
         
         // Modal Compiti
-        const modalEl = document.getElementById('taskModal');
+        const taskModalEl = document.getElementById('taskModal');
         const taskFormEl = document.getElementById('taskForm');
         const modalTitleEl = document.getElementById('modalTitle');
         const taskIdEl = document.getElementById('taskId');
 
-        // Modal Orario (Visualizzazione)
-        const viewTimetableModalEl = document.getElementById('viewTimetableModal');
-        const viewTimetableModalContentEl = document.getElementById('viewTimetableModalContent');
+        // Modal Orario
+        const timetableModalEl = document.getElementById('timetableModal');
         
         // Modal Conferma
         const confirmModalEl = document.getElementById('confirmModal');
-        let confirmCallback = null;
+        let confirmCallback = null; // Funzione da eseguire alla conferma
         
-        // Modal AI (Chat)
-        const aiModalEl = document.getElementById('aiModal');
-        const aiChatMessagesEl = document.getElementById('aiChatMessages');
+        // Modal AI Assistant
+        const aiAssistantModalEl = document.getElementById('aiAssistantModal');
+        const aiChatHistoryEl = document.getElementById('aiChatHistory');
         const aiChatFormEl = document.getElementById('aiChatForm');
         const aiChatInputEl = document.getElementById('aiChatInput');
-        const aiChatSubmitEl = document.getElementById('aiChatSubmit');
-        const closeAiModalButtonEl = document.getElementById('closeAiModalButton');
-        
-        // Modal AI Planner
+        const aiChatSendButtonEl = document.getElementById('aiChatSendButton');
+        let currentAiChatHistory = [];
+        let currentAiTaskId = null;
+
+        // Modal AI Planner (NUOVO)
         const aiPlannerModalEl = document.getElementById('aiPlannerModal');
-        const aiPlannerModalContentEl = document.getElementById('aiPlannerModalContent');
-        const closeAiPlannerModalButtonEl = document.getElementById('closeAiPlannerModalButton');
+        const aiPlannerChatHistoryEl = document.getElementById('aiPlannerChatHistory');
+        const aiPlannerChatFormEl = document.getElementById('aiPlannerChatForm');
+        const aiPlannerChatInputEl = document.getElementById('aiPlannerChatInput');
+        const aiPlannerChatSendButtonEl = document.getElementById('aiPlannerChatSendButton');
+        let currentAiPlannerChatHistory = []; // Cronologia per la sessione del planner
         
         // Modal Impegni
         const commitmentsModalEl = document.getElementById('commitmentsModal');
         const commitmentsFormEl = document.getElementById('commitmentsForm');
-        const closeCommitmentsModalButtonEl = document.getElementById('closeCommitmentsModalButton');
         
-        // Nuovo Menu
-        const menuButton = document.getElementById('menuButton');
-        const dropdownMenu = document.getElementById('dropdownMenu');
+        // Modal Scadenze Future
+        const futureDeadlinesModalEl = document.getElementById('futureDeadlinesModal');
+        const futureDeadlineFormEl = document.getElementById('futureDeadlineForm');
+        const futureDeadlinesListEl = document.getElementById('futureDeadlinesList');
+        
+        // Menu Dropdown
+        const menuContainer = document.getElementById('menuContainer');
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const menuDropdown = document.getElementById('menuDropdown');
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        // Configurazione Firebase (iniettata dall'ambiente)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // --- LOGICA ORARIO FISSO ---
-        const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
-        
-        const TIMETABLE_HOURS_MAP = {
-            mon: [8, 9, 10, 11, 12], // 5 ore
-            tue: [8, 9, 10, 11, 12, 13], // 6 ore
-            wed: [8, 9, 10, 11, 12], // 5 ore
-            thu: [8, 9, 10, 11, 12, 13], // 6 ore
-            fri: [8, 9, 10, 11, 12]  // 5 ore
-        };
-
-        const FIXED_TIMETABLE = {
+        // --- Orario Fisso ---
+        const timetable = {
             mon: ["Latino", "Matematica", "Matematica", "Inglese", "Italiano"],
             tue: ["Italiano", "Motoria", "Matematica", "Matematica", "Italiano", "Scienze"],
             wed: ["Inglese", "Latino", "Italiano", "Arte", "Matematica"],
             thu: ["Scienze", "Italiano", "Italiano", "Religione", "Matematica", "Arte"],
             fri: ["Latino", "Matematica", "Italiano", "Inglese", "Motoria"]
         };
-        // --- Fine Logica Orario Fisso ---
+        const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
+        const hourSlots = ["8:00-9:00", "9:00-10:00", "10:00-11:00", "11:00-12:00", "12:00-13:00", "13:00-14:00"];
+
 
         // --- Inizializzazione Firebase ---
         
@@ -508,7 +490,7 @@
                     if (user) {
                         console.log("Utente autenticato:", user.uid);
                         userId = user.uid;
-                        await loadUserData();
+                        await loadAllUserData();
                     } else {
                         console.log("Nessun utente, tentativo di autenticazione...");
                         try {
@@ -529,162 +511,27 @@
             }
         }
 
-        async function loadUserData() {
+        // Carica tutti i dati (Compiti, Impegni, Scadenze)
+        async function loadAllUserData() {
             if (!userId) return;
+
             loadingSpinner.style.display = 'none';
             weekGridEl.style.display = 'block';
+
+            // Costruisce i modal statici
+            setupTimetableModal();
+            setupCommitmentsModal();
+
+            // Attacca tutti i listener di Firestore
+            attachTaskListener();
+            attachCommitmentListener();
+            attachFutureDeadlinesListener();
             
-            await attachCommitmentsListener(); 
-            // renderWeekDisplay è ora chiamato da attachCommitmentsListener
-            await attachTaskListener();
+            // Renderizza la settimana (inizialmente vuota, verrà popolata dai listener)
+            renderWeekDisplay(currentWeekStart);
         }
 
-        // --- Funzioni Orario (Visualizzazione) ---
-        
-        function openTimetableModal() {
-            const hours = [8, 9, 10, 11, 12, 13];
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri'];
-            
-            let tableHtml = `
-                <table class="min-w-full divide-y divide-gray-200 border border-gray-200">
-                    <thead class="bg-gray-100 sticky top-0">
-                        <tr>
-                            <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ora</th>
-            `;
-            days.forEach(dayKey => {
-                tableHtml += `<th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">${dayNames[dayKey]}</th>`;
-            });
-            tableHtml += `</tr></thead><tbody class="bg-white divide-y divide-gray-200">`;
-            
-            hours.forEach((hour, hourIndex) => {
-                tableHtml += `<tr class="even:bg-gray-50">`; // Righe alternate
-                tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-800">${hour}:00 - ${hour+1}:00</td>`;
-                
-                days.forEach(dayKey => {
-                    const subject = FIXED_TIMETABLE[dayKey][hourIndex];
-                    if (subject) {
-                        tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-700">${subject}</td>`;
-                    } else {
-                        tableHtml += `<td class="px-3 py-2 whitespace-nowrap text-sm text-gray-400">-</td>`; // Ora vuota
-                    }
-                });
-                tableHtml += `</tr>`;
-            });
-            tableHtml += `</tbody></table>`;
-            
-            viewTimetableModalContentEl.innerHTML = tableHtml;
-            viewTimetableModalEl.style.display = 'flex';
-        }
-        
-        function closeTimetableModal() {
-            viewTimetableModalEl.style.display = 'none';
-        }
-
-        function generateTimetableHTML(dayKey) {
-            const hours = TIMETABLE_HOURS_MAP[dayKey];
-            const subjects = FIXED_TIMETABLE[dayKey];
-            if (!hours || !subjects) return '<p class="text-xs text-gray-400 italic">Orario non definito</p>';
-            
-            let htmlEntries = [];
-            let i = 0;
-            while (i < subjects.length) {
-                let subject = subjects[i];
-                let startHour = hours[i];
-                let j = i + 1;
-                while (j < subjects.length && subjects[j] === subject) {
-                    j++;
-                }
-                let endHour = hours[j - 1] + 1; 
-                htmlEntries.push(`<p class="text-xs text-gray-800 font-semibold">${startHour}:00 - ${endHour}:00: <span class="font-medium">${subject}</span></p>`);
-                i = j;
-            }
-            if (htmlEntries.length === 0) return '<p class="text-xs text-gray-400 italic">Nessun orario impostato</p>';
-            return htmlEntries.join('\n');
-        }
-        
-        // --- Funzioni Gestione Impegni ---
-
-        async function attachCommitmentsListener() {
-            if (commitmentsUnsubscribe) commitmentsUnsubscribe();
-            
-            const commitmentsDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
-            
-            return new Promise((resolve) => {
-                commitmentsUnsubscribe = onSnapshot(commitmentsDocRef, (docSnap) => {
-                    console.log("Dati impegni ricevuti:", docSnap.exists() ? docSnap.data() : "Nessun dato");
-                    localCommitments = docSnap.exists() ? docSnap.data() : {};
-                    
-                    for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
-                        const inputEl = document.getElementById(`commit-${dayKey}`);
-                        if (inputEl) {
-                            inputEl.value = localCommitments[dayKey] || '';
-                        }
-                    }
-                    
-                    // Ridisegna la settimana ora che abbiamo gli impegni
-                    renderWeekDisplay(currentWeekStart);
-                    resolve();
-                }, (error) => {
-                    console.error("Errore nel listener degli impegni:", error);
-                    showError("Impossibile caricare gli impegni.");
-                    resolve(); // Risolvi comunque per non bloccare l'app
-                });
-            });
-        }
-
-        async function handleSaveCommitments(e) {
-            e.preventDefault();
-            if (!userId) return;
-
-            const commitmentsData = {};
-            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
-                const inputEl = document.getElementById(`commit-${dayKey}`);
-                commitmentsData[dayKey] = inputEl.value.trim() || '';
-            }
-
-            try {
-                const commitmentsDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
-                await setDoc(commitmentsDocRef, commitmentsData);
-                console.log("Impegni salvati:", commitmentsData);
-                closeCommitmentsModal();
-                // Il listener onSnapshot aggiornerà automaticamente la UI
-            } catch (error) {
-                console.error("Errore salvataggio impegni:", error);
-                showError("Errore nel salvataggio degli impegni.");
-            }
-        }
-        
-        function openCommitmentsModal() {
-            // Assicura che il modal sia popolato con i dati più recenti
-            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
-                const inputEl = document.getElementById(`commit-${dayKey}`);
-                if (inputEl) {
-                    inputEl.value = localCommitments[dayKey] || '';
-                }
-            }
-            commitmentsModalEl.style.display = 'flex';
-        }
-
-        function closeCommitmentsModal() {
-            commitmentsModalEl.style.display = 'none';
-        }
-
-        function renderWeekCommitments() {
-            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
-                const displayEl = document.getElementById(`commitments-display-${dayKey}`);
-                if (displayEl) {
-                    const commitmentText = localCommitments[dayKey];
-                    if (commitmentText) {
-                        displayEl.innerHTML = `<p class="text-xs text-gray-800 font-semibold">${commitmentText}</p>`;
-                    } else {
-                        displayEl.innerHTML = `<p class="text-xs text-gray-400 italic">Nessun impegno</p>`;
-                    }
-                }
-            }
-        }
-
-
-        // --- Funzioni Gestione Compiti (Tasks) ---
+        // --- Listener di Firestore ---
 
         function attachTaskListener() {
             if (taskUnsubscribe) taskUnsubscribe();
@@ -694,173 +541,308 @@
                 console.log("Dati compiti ricevuti.");
                 allTasks = {};
                 querySnapshot.forEach((doc) => {
-                    allTasks[doc.id] = doc.data();
+                    allTasks[doc.id] = { id: doc.id, ...doc.data() };
                 });
-                // Ridisegna la settimana con i compiti aggiornati
-                renderWeekDisplay(currentWeekStart); 
-            }, (error) => {
-                console.error("Errore nel listener dei compiti:", error);
-                showError("Impossibile caricare i compiti.");
-            });
+                renderWeekDisplay(currentWeekStart); // Ridisegna la settimana
+            }, (error) => console.error("Errore listener compiti:", error));
         }
 
-        async function handleSaveTask(e) {
+        function attachCommitmentListener() {
+            if (commitmentUnsubscribe) commitmentUnsubscribe();
+            const commitmentDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
+            
+            commitmentUnsubscribe = onSnapshot(commitmentDocRef, (docSnap) => {
+                console.log("Dati impegni ricevuti.");
+                const commitments = docSnap.exists() ? docSnap.data() : {};
+                // Popola il modal con i dati caricati
+                for (const dayKey of Object.keys(dayNames)) {
+                    const inputEl = document.getElementById(`commitment-${dayKey}`);
+                    if (inputEl) {
+                        inputEl.value = commitments[dayKey] || '';
+                    }
+                }
+                renderWeekDisplay(currentWeekStart); // Ridisegna la settimana
+            }, (error) => console.error("Errore listener impegni:", error));
+        }
+
+        function attachFutureDeadlinesListener() {
+            if (futureDeadlinesUnsubscribe) futureDeadlinesUnsubscribe();
+            const deadlinesCollectionRef = collection(db, "artifacts", appId, "users", userId, "future_deadlines");
+            
+            futureDeadlinesUnsubscribe = onSnapshot(deadlinesCollectionRef, (querySnapshot) => {
+                console.log("Dati scadenze future ricevuti.");
+                allFutureDeadlines = [];
+                querySnapshot.forEach((doc) => {
+                    allFutureDeadlines.push({ id: doc.id, ...doc.data() });
+                });
+                // Ordina per data
+                allFutureDeadlines.sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                renderFutureDeadlinesList(); // Aggiorna la lista nel modal
+                renderNotificationBanner(); // Aggiorna il banner
+                renderWeekDisplay(currentWeekStart); // Ridisegna la settimana
+            }, (error) => console.error("Errore listener scadenze:", error));
+        }
+        
+        
+        // --- Funzioni Orario (Fisso) ---
+        
+        function setupTimetableModal() {
+            const tableContainer = document.getElementById('timetableModalTable');
+            let tableHtml = '<table><thead><tr><th>Ora</th>';
+            Object.values(dayNames).forEach(name => tableHtml += `<th>${name}</th>`);
+            tableHtml += '</tr></thead><tbody>';
+
+            hourSlots.forEach((hour, hourIndex) => {
+                // Colori alternati
+                tableHtml += `<tr class="${hourIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}"><td><strong>${hour}</strong></td>`;
+                Object.keys(dayNames).forEach(dayKey => {
+                    const subject = timetable[dayKey][hourIndex] || '---';
+                    tableHtml += `<td>${subject}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+
+            tableHtml += '</tbody></table>';
+            tableContainer.innerHTML = tableHtml;
+        }
+
+        function getSubjectsForDay(dayKey) {
+            if (!timetable[dayKey]) return [];
+            // Rimuove duplicati
+            return [...new Set(timetable[dayKey])]; 
+        }
+
+        
+        // --- Funzioni Impegni Settimanali ---
+        
+        function setupCommitmentsModal() {
+            const contentEl = document.getElementById('commitmentsModalContent');
+            let html = '';
+            Object.keys(dayNames).forEach(dayKey => {
+                html += `<div>
+                    <label for="commitment-${dayKey}" class="block text-sm font-medium text-gray-700">${dayNames[dayKey]}</label>
+                    <input type="text" id="commitment-${dayKey}" 
+                           placeholder="es. 17:00 - 19:00 Pallavolo"
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>`;
+            });
+            contentEl.innerHTML = html;
+        }
+        
+        async function handleSaveCommitments(e) {
             e.preventDefault();
             if (!userId) return;
-            const id = taskIdEl.value;
-            let taskData;
-            
-            if (id && allTasks[id]) {
-                // Aggiornamento
-                taskData = {
-                    ...allTasks[id], // Mantiene i dati esistenti (come aiChatHistory)
-                    subject: taskFormEl.subject.value,
-                    description: taskFormEl.description.value,
-                    dueDate: taskFormEl.dueDate.value,
-                };
-            } else {
-                // Creazione
-                taskData = {
-                    subject: taskFormEl.subject.value,
-                    description: taskFormEl.description.value,
-                    dueDate: taskFormEl.dueDate.value,
-                    completed: false,
-                    aiChatHistory: [] // NUOVO: Inizializza la cronologia chat
-                };
-            }
-            
+
+            const commitmentsData = {};
+            Object.keys(dayNames).forEach(dayKey => {
+                commitmentsData[dayKey] = document.getElementById(`commitment-${dayKey}`).value.trim();
+            });
+
             try {
-                if (id) {
-                    // Aggiorna compito esistente
-                    const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
-                    await updateDoc(taskDocRef, taskData);
-                } else {
-                    // Crea nuovo compito
-                    const tasksCollectionRef = collection(db, "artifacts", appId, "users", userId, "tasks");
-                    await addDoc(tasksCollectionRef, taskData);
-                }
-                closeModal();
+                const commitmentDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
+                await setDoc(commitmentDocRef, commitmentsData);
+                closeModal(commitmentsModalEl);
             } catch (error) {
-                console.error("Errore salvataggio compito:", error);
-                showError("Impossibile salvare il compito.");
+                console.error("Errore salvataggio impegni:", error);
             }
+        }
+        
+        async function getCommitments() {
+            // Prende i dati attuali dal DB (per AI Planner)
+            const commitmentDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
+            const docSnap = await getDoc(commitmentDocRef);
+            return docSnap.exists() ? docSnap.data() : {};
         }
 
 
-        function handleEditTask(id) {
-            const task = allTasks[id];
-            if (!task) return;
-
-            modalTitleEl.innerText = "Modifica Compito";
-            taskIdEl.value = id;
-            
-            populateSubjectDropdown(task.dueDate);
-            
-            taskFormEl.subject.value = task.subject;
-            taskFormEl.description.value = task.description;
-            taskFormEl.dueDate.value = task.dueDate;
-
-            const subjectSelectEl = document.getElementById('subject');
-            if (task.subject && !subjectSelectEl.querySelector(`option[value="${task.subject}"]`)) {
-                const oldOption = document.createElement('option');
-                oldOption.value = task.subject;
-                oldOption.textContent = `${task.subject} (vecchia)`;
-                subjectSelectEl.appendChild(oldOption);
-                taskFormEl.subject.value = task.subject;
-            }
-            modalEl.style.display = 'flex';
-        }
-
-        async function handleToggleTask(id, completed) {
+        // --- Funzioni Scadenze Future (Nuove) ---
+        
+        async function handleSaveFutureDeadline(e) {
+            e.preventDefault();
             if (!userId) return;
+            
+            const description = futureDeadlineFormEl.futureDeadlineDescription.value;
+            const date = futureDeadlineFormEl.futureDeadlineDate.value;
+            
+            if (!description || !date) return;
+            
             try {
-                const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
-                await updateDoc(taskDocRef, { completed: completed });
+                const deadlinesCollectionRef = collection(db, "artifacts", appId, "users", userId, "future_deadlines");
+                await addDoc(deadlinesCollectionRef, { description, date });
+                futureDeadlineFormEl.reset();
             } catch (error) {
-                console.error("Errore aggiornamento compito:", error);
-                showError("Impossibile aggiornare il compito.");
+                console.error("Errore salvataggio scadenza futura:", error);
             }
         }
-
-        function handleDeleteTask(id) {
-            showConfirm("Sei sicuro di voler eliminare questo compito?", () => {
-                performDeleteTask(id);
+        
+        async function handleDeleteFutureDeadline(id) {
+            showConfirm("Sei sicuro di voler eliminare questa scadenza?", async () => {
+                if (!userId) return;
+                try {
+                    const deadlineDocRef = doc(db, "artifacts", appId, "users", userId, "future_deadlines", id);
+                    await deleteDoc(deadlineDocRef);
+                } catch (error) {
+                    console.error("Errore eliminazione scadenza:", error);
+                }
             });
         }
-
-        async function performDeleteTask(id) {
-            if (!userId) return;
-            try {
-                const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
-                await deleteDoc(taskDocRef);
-            } catch (error) {
-                console.error("Errore eliminazione compito:", error);
-                showError("Impossibile eliminare il compito.");
+        
+        function renderFutureDeadlinesList() {
+            futureDeadlinesListEl.innerHTML = ''; // Pulisci
+            if (allFutureDeadlines.length === 0) {
+                futureDeadlinesListEl.innerHTML = '<p class="text-sm text-gray-500 italic">Nessuna scadenza futura salvata.</p>';
+                return;
             }
+            
+            allFutureDeadlines.forEach(deadline => {
+                const li = document.createElement('div');
+                li.className = 'flex justify-between items-center p-2 bg-gray-50 rounded-lg';
+                li.innerHTML = `
+                    <div>
+                        <p class="font-medium text-sm">${deadline.description}</p>
+                        <p class="text-xs text-gray-600">${new Date(deadline.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+                    <button data-id="${deadline.id}" class="delete-deadline-btn p-1 rounded-full hover:bg-red-100">
+                        <span data-lucide="Trash2" class="w-4 h-4 text-red-500"></span>
+                    </button>
+                `;
+                futureDeadlinesListEl.appendChild(li);
+            });
+            
+            // Aggiungi listener ai pulsanti elimina
+            futureDeadlinesListEl.querySelectorAll('.delete-deadline-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleDeleteFutureDeadline(e.currentTarget.dataset.id));
+            });
+            
+            lucide.createIcons();
         }
 
-
         // --- Funzioni di Rendering UI ---
+        
+        function renderNotificationBanner() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Filtra scadenze da oggi ai prossimi 21 giorni
+            const upcomingDeadlines = allFutureDeadlines.filter(d => {
+                const deadlineDate = new Date(d.date + 'T00:00:00');
+                const diffTime = deadlineDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 && diffDays <= 21;
+            });
+            
+            if (upcomingDeadlines.length === 0) {
+                notificationBannerEl.style.display = 'none';
+                return;
+            }
+            
+            let message = `<strong>Attenzione:</strong> Hai ${upcomingDeadlines.length} scadenz${upcomingDeadlines.length > 1 ? 'e' : 'a'} in arrivo! `;
+            message += upcomingDeadlines.map(d => 
+                `"${d.description}" (${new Date(d.date + 'T00:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })})`
+            ).join(', ');
 
-        function renderWeekDisplay(startDate) {
-            if (!weekScrollContainerEl) return;
-            weekScrollContainerEl.innerHTML = '';
+            notificationBannerEl.innerHTML = `
+                <div class="max-w-7xl mx-auto p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800">
+                    <div class="flex items-center gap-3">
+                        <span data-lucide="AlertTriangle" class="w-5 h-5"></span>
+                        <p class="text-sm">${message}</p>
+                    </div>
+                </div>`;
+            notificationBannerEl.style.display = 'block';
+            lucide.createIcons();
+        }
+
+        // Disegna l'intera griglia settimanale
+        async function renderWeekDisplay(startDate) {
+            if (!weekScrollContainerEl || !userId) return;
+            
+            weekScrollContainerEl.innerHTML = ''; // Pulisci la griglia
             currentWeekDisplayEl.textContent = formatWeekRange(startDate);
-            const days = getWeekDays(startDate);
+
+            const days = getWeekDays(startDate); // Ottiene i 5 giorni (Lun-Ven)
+            const commitments = await getCommitments(); // Carica gli impegni
+            const todayStr = formatDate(new Date());
 
             for (const day of days) {
                 const dateStr = formatDate(day.date);
-                const dayKey = day.value.toLowerCase().substring(0, 3);
+                const dayKey = day.value.toLowerCase(); // 'mon', 'tue', ecc.
+                
+                // Genera HTML Orario
                 const timetableHtml = generateTimetableHTML(dayKey);
                 
+                // Genera HTML Impegni
+                const commitmentHtml = commitments[dayKey] 
+                    ? `<p class="text-xs text-gray-800 font-medium">${commitments[dayKey]}</p>` 
+                    : '<p class="text-xs text-gray-400 italic">Nessun impegno</p>';
+                    
+                // Genera HTML Radar Scadenze
+                const radarHtml = generateRadarHTML(day.date);
+
                 const dayCard = document.createElement('div');
-                dayCard.className = 'day-column bg-white rounded-xl shadow-sm p-3 flex flex-col';
+                dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${dateStr === todayStr ? 'border-2 border-blue-500' : ''}`;
                 dayCard.id = `day-${dateStr}`;
+                
                 dayCard.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-base font-semibold text-gray-800">${day.name}</h2>
                         <span class="text-sm font-medium text-gray-500">${day.date.getDate()}</span>
                     </div>
                     
+                    <!-- Radar Scadenze -->
+                    <h3 class="font-semibold text-sm text-gray-500 mb-1 mt-2">Radar Scadenze</h3>
+                    <div class="radar-display mb-2 p-2 bg-red-50 rounded-lg min-h-[30px]">
+                        ${radarHtml}
+                    </div>
+                    
                     <!-- Sezione Orario -->
-                    <div class="border-t border-gray-100 my-2"></div>
-                    <h3 class="font-semibold text-sm text-gray-500 mb-1">Orario</h3>
-                    <div class="timetable-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[40px]">${timetableHtml}</div>
+                    <h3 class="font-semibold text-sm text-gray-500 mb-1 mt-2">Orario</h3>
+                    <div class="timetable-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[40px]">
+                        ${timetableHtml}
+                    </div>
                     
                     <!-- Sezione Impegni -->
-                    <div class="border-t border-gray-100 my-2"></div>
-                    <h3 class="font-semibold text-sm text-gray-500 mb-1">Impegni</h3>
-                    <div id="commitments-display-${dayKey}" class="commitments-display mb-2 p-2 bg-gray-50 rounded-lg min-h-[30px]">
-                        <!-- Popolato da renderWeekCommitments -->
+                    <h3 class="font-semibold text-sm text-gray-500 mb-1 mt-2">Impegni</h3>
+                    <div class="commitment-display mb-2 p-2 bg-green-50 rounded-lg min-h-[30px]">
+                        ${commitmentHtml}
                     </div>
 
                     <!-- Sezione Compiti -->
                     <div class="border-t border-gray-100 my-2"></div>
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-semibold text-sm text-gray-500">Compiti</h3>
-                        <button class="add-task-to-day-btn p-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition shadow" data-date="${dateStr}">
+                        <button class="add-task-to-day-btn p-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition shadow" data-date="${dateStr}" data-daykey="${dayKey}">
                             <span data-lucide="plus" class="w-4 h-4"></span>
                         </button>
                     </div>
-                    <div id="task-list-${dateStr}" class="task-list space-y-2 mt-2 flex-1 overflow-y-auto"></div>`;
+                    <div id="task-list-${dateStr}" class="task-list space-y-2 mt-2 flex-1 overflow-y-auto">
+                        <!-- I compiti per questo giorno verranno inseriti qui -->
+                    </div>
+                `;
                 weekScrollContainerEl.appendChild(dayCard);
             }
             
+            // Collega gli eventi ai nuovi pulsanti "+"
             weekScrollContainerEl.querySelectorAll('.add-task-to-day-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const date = e.currentTarget.dataset.date;
-                    openModal(date);
+                    const dayKey = e.currentTarget.dataset.daykey;
+                    openModal(taskModalEl, date, dayKey);
                 });
             });
 
+            // Popola i compiti
             populateTasksForWeek(days);
-            renderWeekCommitments(); // Assicura che gli impegni siano visibili
+            
+            // Inizializza le icone Lucide
             lucide.createIcons();
         }
 
+        // Popola le liste dei compiti per la settimana visibile
         function populateTasksForWeek(days) {
             document.querySelectorAll('.task-list').forEach(list => list.innerHTML = '');
             const dateStrings = days.map(day => formatDate(day.date));
+
             for (const id in allTasks) {
                 const task = allTasks[id];
                 if (dateStrings.includes(task.dueDate)) {
@@ -868,7 +850,64 @@
                 }
             }
         }
+        
+        // Genera l'HTML dell'orario raggruppando le ore
+        function generateTimetableHTML(dayKey) {
+            const subjects = timetable[dayKey];
+            if (!subjects) return '<p class="text-xs text-gray-400 italic">Errore orario</p>';
+            
+            let htmlEntries = [];
+            let i = 0;
+            while (i < subjects.length) {
+                let currentSubject = subjects[i];
+                let startHour = 8 + i;
+                
+                let j = i + 1;
+                while (j < subjects.length && subjects[j] === currentSubject) {
+                    j++;
+                }
+                
+                let endHour = 8 + j;
+                htmlEntries.push(`<p class="text-xs text-gray-800 font-semibold">${startHour}:00 - ${endHour}:00: <span class="font-medium">${currentSubject}</span></p>`);
+                i = j;
+            }
 
+            if (htmlEntries.length === 0) {
+                return '<p class="text-xs text-gray-400 italic">Nessun orario impostato</p>';
+            }
+            return htmlEntries.join('\n');
+        }
+        
+        // Genera HTML per il radar scadenze
+        function generateRadarHTML(dayDate) {
+            const today = new Date(dayDate);
+            today.setHours(0, 0, 0, 0);
+            
+            const relevantDeadlines = allFutureDeadlines.filter(d => {
+                const deadlineDate = new Date(d.date + 'T00:00:00');
+                const diffTime = deadlineDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 && diffDays <= 14; // Mostra scadenze entro 14 giorni
+            });
+            
+            if (relevantDeadlines.length === 0) {
+                return '<p class="text-xs text-gray-400 italic">Nessuna scadenza imminente</p>';
+            }
+            
+            return relevantDeadlines.map(d => {
+                const deadlineDate = new Date(d.date + 'T00:00:00');
+                const diffTime = deadlineDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                let daysText = `(Oggi!)`;
+                if (diffDays === 1) daysText = `(Domani!)`;
+                if (diffDays > 1) daysText = `(-${diffDays}gg)`;
+                
+                return `<p class="text-xs text-red-800 font-semibold">${daysText} <span class="font-medium">${d.description}</span></p>`;
+            }).join('\n');
+        }
+
+
+        // Disegna un singolo compito nella colonna corretta
         function renderTask(id, data) {
             const taskListContainer = document.getElementById(`task-list-${data.dueDate}`);
             if (!taskListContainer) return;
@@ -878,36 +917,38 @@
             taskEl.dataset.completed = data.completed;
             taskEl.className = `p-2.5 rounded-lg border flex items-center gap-3 transition ${data.completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:bg-gray-50'}`;
 
+            // Checkbox
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = data.completed;
-            checkbox.className = 'w-5 h-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500';
+            checkbox.className = 'w-5 h-5 rounded text-blue-600 border-gray-300 focus:ring-blue-500 flex-shrink-0';
             checkbox.addEventListener('change', (e) => {
                 handleToggleTask(id, e.target.checked);
             });
 
+            // Contenuto (Materia + Descrizione)
             const contentDiv = document.createElement('div');
-            contentDiv.className = 'flex-1 cursor-pointer';
+            contentDiv.className = 'flex-1 cursor-pointer min-w-0'; // min-w-0 per troncare testo
             contentDiv.innerHTML = `
-                <p class="font-semibold text-sm ${data.completed ? 'text-green-800 line-through' : 'text-gray-800'}">${data.subject}</p>
-                <p class="text-xs ${data.completed ? 'text-green-600 line-through' : 'text-gray-600'}">${data.description}</p>
+                <p class="font-semibold text-sm truncate ${data.completed ? 'text-green-800 line-through' : 'text-gray-800'}">${data.subject}</p>
+                <p class="text-xs truncate ${data.completed ? 'text-green-600 line-through' : 'text-gray-600'}">${data.description}</p>
             `;
             contentDiv.addEventListener('click', () => handleEditTask(id));
             
+            // Pulsanti Azione (AI + Elimina)
             const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'flex flex-col sm:flex-row gap-1 ml-auto';
-
+            actionsDiv.className = 'flex flex-shrink-0 ml-auto';
+            
+            // Pulsante Assistente AI
             const aiButton = document.createElement('button');
             aiButton.className = 'p-1 rounded-full hover:bg-blue-100';
-            aiButton.title = 'Assistente AI';
-            aiButton.innerHTML = `<span data-lucide="Sparkles" class="text-blue-500 hover:text-blue-700" width="16" height="16"></span>`;
-            // MODIFICATO: Passa l'ID del compito alla funzione
-            aiButton.addEventListener('click', () => openAiModal(id, data.subject, data.description));
+            aiButton.innerHTML = `<span data-lucide="Sparkles" class="w-4 h-4 text-blue-500"></span>`;
+            aiButton.addEventListener('click', () => handleOpenAiAssistant(id));
             
+            // Pulsante Elimina
             const deleteButton = document.createElement('button');
             deleteButton.className = 'p-1 rounded-full hover:bg-red-100';
-            deleteButton.title = 'Elimina';
-            deleteButton.innerHTML = `<span data-lucide="Trash2" class="text-red-500 hover:text-red-700" width="16" height="16"></span>`;
+            deleteButton.innerHTML = `<span data-lucide="Trash2" class="w-4 h-4 text-red-500"></span>`;
             deleteButton.addEventListener('click', () => handleDeleteTask(id));
 
             actionsDiv.appendChild(aiButton);
@@ -920,458 +961,489 @@
             taskListContainer.appendChild(taskEl);
             lucide.createIcons({ nodes: [taskEl] });
         }
+        
+        
+        // --- Funzioni Gestione Compiti (Tasks) ---
 
-        // --- Funzione per popolare il dropdown materie (da orario fisso) ---
-        function populateSubjectDropdown(dateStr) {
-            const subjectSelectEl = document.getElementById('subject');
-            subjectSelectEl.innerHTML = '<option value="">-- Seleziona Materia --</option>';
-            if (!dateStr) return;
+        // Salva (o aggiorna) un compito
+        async function handleSaveTask(e) {
+            e.preventDefault();
+            if (!userId) return;
 
+            const id = taskIdEl.value;
+            const taskData = {
+                subject: taskFormEl.subject.value,
+                description: taskFormEl.description.value,
+                dueDate: taskFormEl.dueDate.value,
+                completed: allTasks[id]?.completed || false,
+                aiChatHistory: allTasks[id]?.aiChatHistory || [] // Preserva la chat
+            };
+            
             try {
-                // Usa il costruttore Date per interpretare la data nel fuso orario locale
-                const parts = dateStr.split('-').map(Number);
-                const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                
-                const dayOfWeek = dateObj.getDay(); // 0 = Dom, 1 = Lun, ... 6 = Sab
-                const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dayOfWeek];
-                
-                if (!dayKey || dayKey === 'sun' || dayKey === 'sat') {
-                    console.log(`Giorno non valido (${dayKey}) per la data ${dateStr}`);
-                    return;
+                if (id) {
+                    // Aggiorna
+                    const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
+                    await updateDoc(taskDocRef, taskData);
+                } else {
+                    // Crea
+                    const tasksCollectionRef = collection(db, "artifacts", appId, "users", userId, "tasks");
+                    await addDoc(tasksCollectionRef, taskData);
                 }
-
-                const daySubjects = FIXED_TIMETABLE[dayKey] || [];
-                const uniqueSubjects = [...new Set(daySubjects)];
-                uniqueSubjects.sort();
-
-                uniqueSubjects.forEach(subject => {
-                    const option = document.createElement('option');
-                    option.value = subject;
-                    option.textContent = subject;
-                    subjectSelectEl.appendChild(option);
-                });
-            } catch (e) {
-                console.error("Errore nel popolare le materie:", e);
-                subjectSelectEl.innerHTML = '<option value="">Errore nel caricare le materie</option>';
+                closeModal(taskModalEl);
+            } catch (error) {
+                console.error("Errore salvataggio compito:", error);
             }
         }
 
-
-        // --- Funzioni Modal (Finestre Popup) ---
-
-        function openModal(defaultDate = null) {
-            taskFormEl.reset();
-            modalTitleEl.innerText = "Nuovo Compito";
-            taskIdEl.value = '';
-            const dateToUse = defaultDate ? defaultDate : formatDate(new Date());
-            taskFormEl.dueDate.value = dateToUse;
-            populateSubjectDropdown(dateToUse);
-            modalEl.style.display = 'flex';
-        }
-
-        function closeModal() {
-            modalEl.style.display = 'none';
-        }
-        
-        function showConfirm(message, callback) {
-            document.getElementById('confirmMessage').innerText = message;
-            confirmCallback = callback;
-            confirmModalEl.style.display = 'flex';
-        }
-        
-        function closeConfirm() {
-            confirmModalEl.style.display = 'none';
-            confirmCallback = null;
-        }
-
-        // --- Funzioni Assistente AI (ORA CON MEMORIA PERSISTENTE) ---
-
-        // Aggiunge un messaggio alla finestra della chat
-        function addAiChatMessage(role, content) {
-            // Rimuove il loading bubble se presente
-            const loadingBubble = aiChatMessagesEl.querySelector('.loading');
-            if (loadingBubble) {
-                loadingBubble.remove();
-            }
-
-            const bubble = document.createElement('div');
-            bubble.classList.add('chat-bubble', role);
+        // Apre il modal per modificare un compito
+        function handleEditTask(id) {
+            const task = allTasks[id];
+            if (!task) return;
             
-            if (content === 'loading') {
-                bubble.classList.add('loading');
-                bubble.innerHTML = `
-                    <span data-lucide="Loader" class="w-4 h-4 animate-spin"></span>
-                    <span class="ml-2 text-sm">L'assistente sta pensando...</span>
-                `;
-                lucide.createIcons({ nodes: [bubble] });
-            } else if (content.startsWith('error:')) {
-                bubble.classList.add('bg-red-100', 'text-red-700'); // Stile errore
-                bubble.textContent = content.substring(6).trim();
+            const dayKey = getDayKeyFromDate(task.dueDate);
+            populateSubjectDropdown(dayKey, task.subject); // Popola con le materie del giorno
+
+            modalTitleEl.innerText = "Modifica Compito";
+            taskIdEl.value = id;
+            taskFormEl.subject.value = task.subject;
+            taskFormEl.description.value = task.description;
+            taskFormEl.dueDate.value = task.dueDate;
+            openModal(taskModalEl);
+        }
+        
+        // Popola il dropdown delle materie
+        function populateSubjectDropdown(dayKey, currentSubject = null) {
+            const subjectSelect = taskFormEl.subject;
+            subjectSelect.innerHTML = ''; // Pulisci
+            
+            const subjects = getSubjectsForDay(dayKey);
+            
+            // Aggiungi un'opzione vuota
+            subjectSelect.add(new Option("Scegli una materia...", ""));
+            
+            subjects.forEach(subject => {
+                subjectSelect.add(new Option(subject, subject));
+            });
+            
+            // Se la materia attuale non è più nell'orario, aggiungila
+            if (currentSubject && !subjects.includes(currentSubject)) {
+                subjectSelect.add(new Option(`${currentSubject} (vecchia)`, currentSubject));
+            }
+        }
+
+        // Aggiorna lo stato "completato" di un compito
+        async function handleToggleTask(id, completed) {
+            if (!userId) return;
+            try {
+                const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
+                await updateDoc(taskDocRef, { completed: completed });
+            } catch (error) {
+                console.error("Errore aggiornamento compito:", error);
+            }
+        }
+
+        // Mostra il popup di conferma prima di eliminare
+        function handleDeleteTask(id) {
+            showConfirm("Sei sicuro di voler eliminare questo compito?", () => {
+                performDeleteTask(id);
+            });
+        }
+
+        // Esegue l'eliminazione effettiva
+        async function performDeleteTask(id) {
+            if (!userId) return;
+            try {
+                const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", id);
+                await deleteDoc(taskDocRef);
+            } catch (error) {
+                console.error("Errore eliminazione compito:", error);
+            }
+        }
+
+        
+        // --- Funzioni Assistente AI (Chat) ---
+        
+        async function handleOpenAiAssistant(id) {
+            const task = allTasks[id];
+            if (!task) return;
+            
+            currentAiTaskId = id;
+            currentAiChatHistory = task.aiChatHistory || [];
+            
+            aiChatHistoryEl.innerHTML = ''; // Pulisci la finestra
+            openModal(aiAssistantModalEl);
+            
+            if (currentAiChatHistory.length > 0) {
+                // Carica la cronologia esistente
+                currentAiChatHistory.forEach(msg => renderAiChatMessage(msg.role, msg.parts[0].text));
             } else {
-                // Formattazione HTML base per la risposta del modello
-                // Converte markdown base in HTML
-                let formattedContent = content
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Grassetto
-                    .replace(/\* (.*?)(?=\n|$)/g, '<li>$1</li>') // Liste puntate
-                    .replace(/(<\/li>)+/g, '</li>') // Pulisci liste
-                    .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>') // Metti <ul>
-                    .replace(/<\/ul>\n<ul>/g, '') // Unisci liste adiacenti
-                    .replace(/(\r\n|\n|\r)/g, '<br>') // A capo
-                    .replace(/<br><ul>/g, '<ul>') // Pulisci
-                    .replace(/<\/ul><br>/g, '</ul>');
-                    
-                bubble.innerHTML = formattedContent;
-            }
-            
-            aiChatMessagesEl.appendChild(bubble);
-            aiChatMessagesEl.scrollTop = aiChatMessagesEl.scrollHeight;
-        }
-
-
-        // Avvia una nuova sessione di chat o CARICA quella esistente
-        async function openAiModal(taskId, subject, description) {
-            if (isAiCallPending) return;
-            
-            currentAiTaskId = taskId; // Imposta l'ID del compito corrente
-            const task = allTasks[taskId];
-            
-            aiModalEl.style.display = 'flex';
-            aiChatMessagesEl.innerHTML = '';
-            aiChatInputEl.value = '';
-            
-            const savedHistory = (task && task.aiChatHistory) ? task.aiChatHistory : [];
-
-            if (savedHistory.length > 0) {
-                // Carica la cronologia salvata
-                console.log("Caricamento cronologia chat:", savedHistory);
-                currentAiChatHistory = [...savedHistory];
-                currentAiChatHistory.forEach(message => {
-                    addAiChatMessage(message.role, message.parts[0].text);
-                });
-                aiChatMessagesEl.scrollTop = aiChatMessagesEl.scrollHeight;
-            } else {
-                // Avvia una nuova chat (è la prima volta)
-                console.log("Avvio nuova chat per il compito:", taskId);
-                currentAiChatHistory = []; // Resetta la cronologia
-                addAiChatMessage('model', 'loading');
+                // È una nuova chat, avvia con i suggerimenti
+                renderAiChatMessage("model", "...", true); // Messaggio di caricamento
+                const prompt = `Agisci come un tutor scolastico amichevole e incoraggiante. Ho questo compito:
+                - Materia: ${task.subject}
+                - Descrizione: ${task.description}
+                Basandoti su informazioni aggiornate (usa la ricerca Google), dammi una brevissima spiegazione (massimo 2 frasi) dell'argomento principale e 3 consigli pratici e concisi per svolgerlo al meglio. Formatta la risposta in HTML semplice (paragrafi e liste).`;
                 
-                const initialPrompt = `Il mio compito è:
-- Materia: ${subject}
-- Descrizione: ${description}
-
-Forniscimi la spiegazione e i consigli pratici (rispondi in HTML).`;
+                const initialMessage = { role: "user", parts: [{ text: prompt }] };
+                currentAiChatHistory.push(initialMessage);
                 
-                // Avvia la chat
-                await callGeminiChatApi(initialPrompt, true);
+                // Chiama l'API
+                callGeminiChatApi(true); // true = è una chiamata con ricerca
             }
-        }
-
-        function closeAiModal() {
-            aiModalEl.style.display = 'none';
-            aiChatMessagesEl.innerHTML = '';
-            currentAiChatHistory = [];
-            currentAiTaskId = null; // Resetta l'ID del compito
-            isAiCallPending = false;
         }
         
-        // Gestisce l'invio di un nuovo messaggio
         async function handleAiChatSubmit(e) {
             e.preventDefault();
-            const userText = aiChatInputEl.value.trim();
-            if (!userText || isAiCallPending || !currentAiTaskId) return;
+            const userPrompt = aiChatInputEl.value.trim();
+            if (!userPrompt || !currentAiTaskId) return;
             
             aiChatInputEl.value = '';
-            aiChatInputEl.disabled = true;
-            aiChatSubmitEl.disabled = true;
+            renderAiChatMessage("user", userPrompt);
             
-            addAiChatMessage('user', userText);
-            addAiChatMessage('model', 'loading');
+            const userMessage = { role: "user", parts: [{ text: userPrompt }] };
+            currentAiChatHistory.push(userMessage);
             
-            await callGeminiChatApi(userText, false);
+            renderAiChatMessage("model", "...", true); // Messaggio di caricamento
+            
+            // Chiama l'API
+            callGeminiChatApi(true); // true = usa ricerca
         }
-
-        // Salva la cronologia chat su Firebase
-        async function saveAiChatHistory() {
-            if (!currentAiTaskId || !userId) return;
+        
+        async function callGeminiChatApi(useSearch) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
+            const payload = {
+                contents: currentAiChatHistory, // Invia l'intera cronologia
+                tools: useSearch ? [{ "google_search": {} }] : [],
+                systemInstruction: {
+                    parts: [{ text: "Agisci come un tutor scolastico amichevole, conciso e incoraggiante per uno studente di scuola media. Usa un linguaggio semplice e chiaro. Basa le tue risposte su informazioni verificate (usando la ricerca). Formatta sempre le risposte in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong>)." }]
+                }
+            };
+
+            try {
+                aiChatSendButtonEl.disabled = true;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const modelResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (modelResponse) {
+                    const modelMessage = { role: "model", parts: [{ text: modelResponse }] };
+                    currentAiChatHistory.push(modelMessage);
+                    
+                    // Rimuovi "..." e renderizza la risposta
+                    removeAiChatLoading();
+                    renderAiChatMessage("model", modelResponse);
+                    
+                    // Salva la cronologia su Firebase
+                    await saveAiChatHistory();
+                } else {
+                    throw new Error("Risposta AI non valida.");
+                }
+
+            } catch (error) {
+                console.error("Errore chiamata Gemini:", error);
+                removeAiChatLoading();
+                renderAiChatMessage("model", "Ops, c'è stato un errore. Riprova.");
+            } finally {
+                aiChatSendButtonEl.disabled = false;
+            }
+        }
+        
+        async function saveAiChatHistory() {
+            if (!userId || !currentAiTaskId) return;
             try {
                 const taskDocRef = doc(db, "artifacts", appId, "users", userId, "tasks", currentAiTaskId);
                 await updateDoc(taskDocRef, { aiChatHistory: currentAiChatHistory });
-                console.log("Cronologia chat salvata per il compito:", currentAiTaskId);
+                console.log("Cronologia chat salvata per", currentAiTaskId);
             } catch (error) {
                 console.error("Errore salvataggio cronologia chat:", error);
             }
         }
 
-        // Funzione principale che chiama l'API
-        async function callGeminiChatApi(userPromptText, isFirstMessage = false) {
-            isAiCallPending = true;
-
-            const systemPrompt = `Sei un assistente tutor (per una studentessa di scuola media o superiore in Italia).
-Rispondi sempre in italiano.
-La tua risposta deve essere una continuazione di una chat.
-Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li> e grassetto <strong>).
-
-Se è il primo messaggio, rispondi con:
-1.  **Breve Spiegazione:** Una spiegazione concisa (massimo 2-3 frasi) dell'argomento principale.
-2.  **Consigli Pratici:** Una lista puntata (massimo 3-4 punti) con consigli pratici e specifici.
-
-Per i messaggi successivi, rispondi in modo conciso alla domanda dell'utente, mantenendo il contesto della chat.
-Usa la ricerca se necessario per rispondere alle domande.`;
+        function renderAiChatMessage(role, text, isLoading = false) {
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model'}`;
             
-            // Aggiungi il prompt dell'utente alla cronologia (solo se non è il messaggio di sistema iniziale)
-            if (!isFirstMessage || currentAiChatHistory.length === 0) {
-                 currentAiChatHistory.push({ role: 'user', parts: [{ text: userPromptText }] });
+            if (isLoading) {
+                bubble.id = 'ai-loading-bubble';
+                bubble.innerHTML = `<div class="loading-bubble"><div class="loading-dot bg-gray-500" style="animation-delay: 0s;"></div><div class="loading-dot bg-gray-500" style="animation-delay: 0.2s;"></div><div class="loading-dot bg-gray-500" style="animation-delay: 0.4s;"></div></div>`;
+            } else {
+                const safeHtml = text.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "");
+                bubble.innerHTML = safeHtml;
             }
-
-            const payload = {
-                contents: currentAiChatHistory,
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
             
-            // Gestione speciale per il primo messaggio
-            if (isFirstMessage) {
-                payload.contents = [{ role: 'user', parts: [{ text: userPromptText }] }];
-            }
+            aiChatHistoryEl.appendChild(bubble);
+            aiChatHistoryEl.scrollTop = aiChatHistoryEl.scrollHeight; // Scrolla in fondo
+        }
 
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (!response.ok) throw new Error(`Errore API: ${response.statusText}`);
-                const result = await response.json();
-                
-                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                    const modelText = result.candidates[0].content.parts[0].text;
-                    
-                    // Se era il primo messaggio, ora salviamo sia il prompt che la risposta
-                    if (isFirstMessage) {
-                        currentAiChatHistory.push({ role: 'user', parts: [{ text: userPromptText }] });
-                    }
-                    currentAiChatHistory.push({ role: 'model', parts: [{ text: modelText }] });
-                    
-                    addAiChatMessage('model', modelText);
-                    await saveAiChatHistory(); // Salva la cronologia aggiornata
-                } else {
-                    addAiChatMessage('model', 'error: Non ho trovato una risposta valida. Riprova.');
-                    // Rimuovi l'ultimo prompt dell'utente dalla cronologia se l'AI fallisce
-                    currentAiChatHistory.pop();
-                }
-            } catch (error) {
-                console.error("Errore chiamata AI:", error);
-                addAiChatMessage('model', `error: C'è stato un errore: ${error.message}`);
-                currentAiChatHistory.pop();
-            } finally {
-                isAiCallPending = false;
-                aiChatInputEl.disabled = false;
-                aiChatSubmitEl.disabled = false;
-                aiChatInputEl.focus();
+        function removeAiChatLoading() {
+            const loadingBubble = document.getElementById('ai-loading-bubble');
+            if (loadingBubble) {
+                loadingBubble.remove();
             }
         }
         
-        // --- Funzioni AI Planner (AGGIORNATE CON IMPEGNI E LOGICA SCADENZA) ---
 
-        function openAiPlannerModal() {
-            if (isAiCallPending) return;
+        // --- Funzioni AI Planner (NUOVA CHAT) ---
+        
+        async function handleOpenAiPlanner() {
+            openModal(aiPlannerModalEl);
+            aiPlannerChatHistoryEl.innerHTML = ''; // Pulisci chat
+            currentAiPlannerChatHistory = []; // Resetta cronologia
             
-            aiPlannerModalEl.style.display = 'flex';
-            aiPlannerModalContentEl.innerHTML = `
-                <div class="flex items-center justify-center p-4">
-                    <span data-lucide="Loader" class="w-6 h-6 text-purple-500 animate-spin"></span>
-                    <p class="ml-3 text-gray-600">L'AI sta creando il tuo piano di studio...</p>
-                </div>
+            renderAiPlannerChatMessage("model", "...", true); // Messaggio di caricamento
+            
+            // 1. Definisci la finestra temporale
+            const today = new Date();
+            const startOfWeek = getStartOfWeek(currentWeekStart);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 4);
+            const endOfDeadlineWindow = new Date(endOfWeek);
+            endOfDeadlineWindow.setDate(endOfWeek.getDate() + 3);
+
+            // 2. Raccogli i Compiti
+            const relevantTasks = Object.values(allTasks).filter(task => {
+                const dueDate = new Date(task.dueDate + 'T00:00:00');
+                return !task.completed && dueDate >= today && dueDate <= endOfDeadlineWindow;
+            });
+            
+            // 3. Raccogli Impegni e Scadenze
+            const commitments = await getCommitments();
+            const futureDeadlines = allFutureDeadlines;
+
+            // 4. Costruisci il Prompt Iniziale
+            const todayStr = today.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+
+            let initialPrompt = `Agisci come un "Tutor di Pianificazione" esperto per uno studente di scuola media.
+            Oggi è ${todayStr}.
+            
+            REGOLA FONDAMENTALE: Un compito con "Scadenza: Martedì" significa che va consegnato Martedì mattina. Il lavoro deve essere completato entro Lunedì sera. Non pianificare MAI un compito nel giorno stesso della sua scadenza.
+            
+            Ecco i dati:
+            1. ORARIO SCOLASTICO (L-V, 8:00-14:00): ${JSON.stringify(timetable)}
+            2. IMPEGNI FISSI (Sport, ecc. - Questi orari sono BLOCCATI): ${JSON.stringify(commitments)}
+            3. SCADENZE FUTURE (Verifiche, Interrogazioni - Inizia a pianificare il ripasso se sono tra 7-14 giorni): ${futureDeadlines.map(d => `- ${d.description} (Scadenza: ${d.date})`).join('\n')}
+            4. COMPITI DA FARE (Non completati): ${relevantTasks.map(t => `- Materia: ${t.subject}, Descrizione: ${t.description} (Scadenza: ${t.dueDate})`).join('\n')}
+            
+            OBIETTIVO:
+            Crea un piano di studio realistico, pomeriggio per pomeriggio, da oggi fino a Venerdì (${endOfWeek.toLocaleDateString('it-IT')}).
+            - Dai priorità ai compiti con scadenza più vicina (rispettando la REGOLA FONDAMENTALE).
+            - Tieni conto degli orari bloccati dagli impegni.
+            - Inserisci piccole sessioni di ripasso per le scadenze future, se opportuno.
+            - Suggerisci un ordine sensato e pause.
+            - Sii conciso e incoraggiante.
+            - Formatta la risposta in HTML semplice (intestazioni <h3> per i giorni, liste <ul><li> per i compiti).
+            - Concludi chiedendomi se voglio apportare modifiche.
             `;
-            lucide.createIcons({ nodes: [aiPlannerModalContentEl] });
             
-            callGeminiPlannerApi();
+            const initialMessage = { role: "user", parts: [{ text: initialPrompt }] };
+            currentAiPlannerChatHistory.push(initialMessage);
+            
+            // Chiama l'API del planner
+            callGeminiPlannerChatApi();
         }
         
-        function closeAiPlannerModal() {
-            aiPlannerModalEl.style.display = 'none';
-            aiPlannerModalContentEl.innerHTML = '';
+        async function handleAiPlannerChatSubmit(e) {
+            e.preventDefault();
+            const userPrompt = aiPlannerChatInputEl.value.trim();
+            if (!userPrompt) return;
+            
+            aiPlannerChatInputEl.value = '';
+            renderAiPlannerChatMessage("user", userPrompt);
+            
+            const userMessage = { role: "user", parts: [{ text: userPrompt }] };
+            currentAiPlannerChatHistory.push(userMessage);
+            
+            renderAiPlannerChatMessage("model", "...", true); // Messaggio di caricamento
+            
+            // Chiama l'API
+            callGeminiPlannerChatApi();
         }
-        
-        async function callGeminiPlannerApi() {
-            isAiCallPending = true;
-            // Disabilita il pulsante nel menu
-            const menuAiPlannerEl = document.getElementById('menuAiPlanner');
-            if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'none';
 
-            const days = getWeekDays(currentWeekStart);
-            const dateStrings = days.map(day => formatDate(day.date));
-            
-            // --- CORREZIONE LOGICA SCADENZA ---
-            // Cerca i compiti di questa settimana E quelli di Lun/Mar della prossima
-            const nextWeekStartDate = new Date(currentWeekStart);
-            nextWeekStartDate.setDate(currentWeekStart.getDate() + 7);
-            
-            const nextMondayDate = new Date(nextWeekStartDate);
-            nextMondayDate.setDate(nextWeekStartDate.getDate()); // Prossimo Lunedì
-            
-            const nextTuesdayDate = new Date(nextWeekStartDate);
-            nextTuesdayDate.setDate(nextWeekStartDate.getDate() + 1); // Prossimo Martedì
-            
-            const datesToScan = [
-                ...dateStrings, // Questa settimana (Lun-Ven)
-                formatDate(nextMondayDate), // Prossimo Lunedì
-                formatDate(nextTuesdayDate)  // Prossimo Martedì
-            ];
-            // --- FINE CORREZIONE ---
-
-            const tasksForWeek = [];
-            for (const id in allTasks) {
-                const task = allTasks[id];
-                // Cerca i compiti con scadenza nelle date da scansionare e non completati
-                if (datesToScan.includes(task.dueDate) && !task.completed) {
-                    tasksForWeek.push(`- ${task.subject}: ${task.description} (Scadenza: ${task.dueDate})`);
-                }
-            }
-            
-            const commitmentsForWeek = [];
-            for (const dayKey of ['mon', 'tue', 'wed', 'thu', 'fri']) {
-                if (localCommitments[dayKey]) {
-                    commitmentsForWeek.push(`- ${dayNames[dayKey]}: ${localCommitments[dayKey]}`);
-                }
-            }
-            
-            if (tasksForWeek.length === 0) {
-                 aiPlannerModalContentEl.innerHTML = `
-                    <div class="text-center">
-                        <span data-lucide="CheckCheck" class="w-12 h-12 mx-auto text-green-500"></span>
-                        <h3 class="font-semibold mt-2">Tutto Fatto!</h3>
-                        <p class="text-sm text-gray-600 mt-1">Non ci sono compiti da pianificare per questa settimana. Ottimo lavoro!</p>
-                    </div>
-                `;
-                lucide.createIcons({ nodes: [aiPlannerModalContentEl] });
-                isAiCallPending = false;
-                if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'auto';
-                return;
-            }
-
-            const formattedTimetable = Object.entries(FIXED_TIMETABLE).map(([dayKey, subjects]) => {
-                const dayName = dayNames[dayKey];
-                const hours = TIMETABLE_HOURS_MAP[dayKey];
-                const subjectList = subjects.map((subj, index) => `  ${hours[index]}:00-${hours[index]+1}:00: ${subj}`).join('\n');
-                return `${dayName}:\n${subjectList}`;
-            }).join('\n\n');
-            
-            const today = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-            const systemPrompt = `Sei un "Tutor di Pianificazione" esperto per studenti italiani.
-Il tuo obiettivo è creare un piano di studio POMERIDIANO realistico, motivante e facile da seguire.
-Rispondi sempre in italiano.
-Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong> e titoli <h3>).
-
-Regole Chiave:
-1.  **REGOLA CRITICA DI PIANIFICAZIONE (La più importante):** La 'data di scadenza' (es. "Scadenza: 2024-11-19") è il giorno in cui il compito viene *consegnato* a scuola (la mattina). Pertanto, il lavoro deve essere completato la sera *prima*. Non pianificare MAI un compito per il giorno stesso della sua scadenza. Esempio: un compito con 'Scadenza: 2024-11-19' (Martedì) deve essere pianificato e completato entro 'Lunedì 18' sera.
-2.  **Analizza i Dati:** Riceverai la data di oggi, l'orario scolastico (mattina), un elenco di *impegni fissi* (sport, musica, ecc.) e un elenco di compiti con scadenze.
-3.  **Pianifica solo i Pomeriggi:** Il tuo piano deve iniziare dal pomeriggio di "oggi" fino a venerdì.
-4.  **RISPETTA GLI IMPEGNI FISSI:** Gli impegni fissi hanno la priorità assoluta. Devi pianificare lo studio *attorno* a questi orari bloccati. Non sovrapporre lo studio agli impegni.
-5.  **Dai Priorità (Compiti):** Assegna priorità ai compiti con scadenza più vicina (rispettando la Regola #1).
-6.  **Sii Realistico:** Non sovraccaricare. Alterna materie (es. non 2 ore di fila di Matematica). Includi brevi pause.
-7.  **Struttura:** Dividi il piano per giorno (es. <h3>Piano per Oggi (Martedì)</h3>). Per ogni giorno, crea una lista puntata <ul><li> con i compiti da fare e un orario suggerito (es. "15:00-15:45: Matematica"). Assicurati di menzionare gli impegni fissi nel piano (es. "17:00-19:00: Pallavolo").
-8.  **Tono:** Sii incoraggiante e positivo. Inizia con una breve frase di incoraggiamento.`;
-            
-            const userQuery = `Ciao! Oggi è ${today}.
-Questo è il mio orario scolastico (so quando sono a scuola la mattina):
-${formattedTimetable}
-
-Questi sono i miei *impegni fissi* (sport, ecc.) da rispettare:
-${commitmentsForWeek.length > 0 ? commitmentsForWeek.join('\n') : "Nessun impegno fisso questa settimana."}
-
-Questi sono i miei *compiti* da fare (ricorda la regola sulla scadenza!):
-${tasksForWeek.join('\n')}
-
-Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispetti i miei impegni fissi e mi permetta di completare i compiti in tempo.`;
-
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+        async function callGeminiPlannerChatApi() {
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-            };
             
+            const payload = {
+                contents: currentAiPlannerChatHistory, // Invia l'intera cronologia
+                // Nota: NESSUNO strumento di ricerca, è solo logica
+                systemInstruction: {
+                    parts: [{ text: `Sei un "Tutor di Pianificazione" esperto per uno studente di scuola media.
+                    Il tuo obiettivo è creare e modificare un piano di studio settimanale.
+                    REGOLA FONDAMENTALE: Un compito con "Scadenza: Martedì" va finito entro Lunedì sera. Non pianificare MAI un compito nel giorno stesso della sua scadenza.
+                    Sii amichevole, conciso e usa sempre HTML semplice (<h3>, <ul>, <li>, <strong>) per formattare i piani di studio.` }]
+                }
+            };
+
             try {
+                aiPlannerChatSendButtonEl.disabled = true;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                if (!response.ok) throw new Error(`Errore API: ${response.statusText}`);
-                const result = await response.json();
-                
-                if (result.candidates && result.candidates[0]?.content?.parts[0]?.text) {
-                    let text = result.candidates[0].content.parts[0].text;
-                    // Formattazione HTML base
-                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    text = text.replace(/### (.*?)(?:\n|$)/g, '<h3>$1</h3>');
-                    text = text.replace(/\* (.*?)(?:\n|$)/g, '<li>$1</li>');
-                    text = text.replace(/(\r\n|\n|\r)/g, '<br>');
-                    text = text.replace(/<br><li>/g, '<li>');
-                    text = text.replace(/<li>/g, '<ul><li>');
-                    text = text.replace(/<\/li><br>/g, '</li></ul>');
-                    text = text.replace(/<\/li><\/ul><ul><li>/g, '</li><li>'); // Unisci liste
-                    aiPlannerModalContentEl.innerHTML = text;
-                } else {
-                    aiPlannerModalContentEl.innerHTML = '<p class="text-red-500">Non ho trovato un piano valido. Riprova.</p>';
+
+                if (!response.ok) {
+                    throw new Error(`Errore API: ${response.statusText}`);
                 }
+
+                const result = await response.json();
+                const modelResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (modelResponse) {
+                    const modelMessage = { role: "model", parts: [{ text: modelResponse }] };
+                    currentAiPlannerChatHistory.push(modelMessage);
+                    
+                    removeAiPlannerChatLoading();
+                    renderAiPlannerChatMessage("model", modelResponse);
+                } else {
+                    throw new Error("Risposta AI non valida.");
+                }
+
             } catch (error) {
-                console.error("Errore chiamata AI Planner:", error);
-                aiPlannerModalContentEl.innerHTML = `<p class="text-red-500">C'è stato un errore nel creare il piano: ${error.message}</p>`;
+                console.error("Errore chiamata Gemini Planner:", error);
+                removeAiPlannerChatLoading();
+                renderAiPlannerChatMessage("model", "Ops, c'è stato un errore. Riprova.");
             } finally {
-                isAiCallPending = false;
-                if(menuAiPlannerEl) menuAiPlannerEl.style.pointerEvents = 'auto';
+                aiPlannerChatSendButtonEl.disabled = false;
             }
+        }
+
+        function renderAiPlannerChatMessage(role, text, isLoading = false) {
+            const bubble = document.createElement('div');
+            // Aggiungiamo la classe 'planner' per il colore custom
+            bubble.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model planner'}`;
+            
+            if (isLoading) {
+                bubble.id = 'ai-planner-loading-bubble';
+                bubble.innerHTML = `<div class="loading-bubble"><div class="loading-dot bg-purple-400" style="animation-delay: 0s;"></div><div class="loading-dot bg-purple-400" style="animation-delay: 0.2s;"></div><div class="loading-dot bg-purple-400" style="animation-delay: 0.4s;"></div></div>`;
+            } else {
+                const safeHtml = text.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "");
+                bubble.innerHTML = safeHtml;
+            }
+            
+            aiPlannerChatHistoryEl.appendChild(bubble);
+            aiPlannerChatHistoryEl.scrollTop = aiPlannerChatHistoryEl.scrollHeight;
+        }
+
+        function removeAiPlannerChatLoading() {
+            const loadingBubble = document.getElementById('ai-planner-loading-bubble');
+            if (loadingBubble) {
+                loadingBubble.remove();
+            }
+        }
+
+
+        // --- Funzioni Modal (Finestre Popup) ---
+        
+        function openModal(modalEl, defaultDate = null, dayKey = null) {
+            // Caso specifico per il modal compiti
+            if (modalEl === taskModalEl) {
+                taskFormEl.reset();
+                modalTitleEl.innerText = "Nuovo Compito";
+                taskIdEl.value = '';
+                
+                if (defaultDate) {
+                    taskFormEl.dueDate.value = defaultDate;
+                }
+                if (dayKey) {
+                    populateSubjectDropdown(dayKey); // Popola le materie per il giorno
+                }
+            }
+            
+            modalEl.style.display = 'flex';
+            // Inizializza le icone nel modal appena aperto
+            lucide.createIcons({ nodes: [modalEl] });
+        }
+
+        function closeModal(modalEl) {
+            modalEl.style.display = 'none';
+            // Pulisci lo stato della chat AI quando si chiude
+            if (modalEl === aiAssistantModalEl) {
+                currentAiTaskId = null;
+                currentAiChatHistory = [];
+            }
+            // Pulisci lo stato della chat Planner quando si chiude
+            if (modalEl === aiPlannerModalEl) {
+                currentAiPlannerChatHistory = [];
+            }
+        }
+        
+        function showConfirm(message, callback) {
+            document.getElementById('confirmMessage').innerText = message;
+            confirmCallback = callback;
+            openModal(confirmModalEl);
+        }
+        
+        function closeConfirm() {
+            closeModal(confirmModalEl);
+            confirmCallback = null;
         }
 
 
         // --- Funzioni Utilità (Date, Errori) ---
 
+        // Trova il Lunedì della settimana corrente
         function getStartOfWeek(date) {
             const d = new Date(date);
+            d.setHours(0, 0, 0, 0); // Azzera l'ora
             const day = d.getDay();
             const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            const newDate = new Date(d.setDate(diff));
-            newDate.setHours(0, 0, 0, 0); // Azzera l'ora per evitare problemi di fuso orario
-            return newDate;
+            return new Date(d.setDate(diff));
         }
 
+        // Ritorna un array di 5 oggetti {name, date, value} da Lunedì a Venerdì
         function getWeekDays(startDate) {
             const days = [];
             const d = new Date(startDate);
-            const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì'];
+            const dayNamesList = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì'];
             const dayValues = ['mon', 'tue', 'wed', 'thu', 'fri'];
+            
             for (let i = 0; i < 5; i++) {
-                days.push({ name: dayNames[i], date: new Date(d), value: dayValues[i] });
+                days.push({
+                    name: dayNamesList[i],
+                    date: new Date(d),
+                    value: dayValues[i]
+                });
                 d.setDate(d.getDate() + 1);
             }
             return days;
         }
 
-        // CORREZIONE per il bug del Lunedì (non usa UTC)
+        // Formatta una data come "YYYY-MM-DD" (METODO SICURO)
         function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
+            const d = new Date(date);
+            const year = d.getFullYear();
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
+        
+        function getDayKeyFromDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00'); // Usa T00:00:00 per evitare problemi di fuso
+            const dayIndex = date.getDay(); // 0=Dom, 1=Lun, ...
+            const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            return dayKeys[dayIndex];
+        }
 
+        // Formatta l'intestazione della settimana (es. "10 Nov - 14 Nov")
         function formatWeekRange(startDate) {
             const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 4);
+            endDate.setDate(startDate.getDate() + 4); // Venerdì
+            
             const startStr = startDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
             const endStr = endDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+            
             return `${startStr} - ${endStr}`;
         }
         
@@ -1405,60 +1477,56 @@ Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispe
                 renderWeekDisplay(currentWeekStart);
             });
 
+            // Gestione Menu Dropdown
+            menuToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuDropdown.classList.toggle('hidden');
+            });
+            // Chiudi menu cliccando fuori
+            document.addEventListener('click', (e) => {
+                if (!menuContainer.contains(e.target)) {
+                    menuDropdown.classList.add('hidden');
+                }
+            });
+            // Chiudi menu cliccando un'opzione
+            menuDropdown.querySelectorAll('a').forEach(item => {
+                item.addEventListener('click', () => menuDropdown.classList.add('hidden'));
+            });
+
+            // Listener pulsanti del menu
+            document.getElementById('openAiPlannerButton').addEventListener('click', handleOpenAiPlanner);
+            document.getElementById('openCommitmentsButton').addEventListener('click', () => openModal(commitmentsModalEl));
+            document.getElementById('openFutureDeadlinesButton').addEventListener('click', () => openModal(futureDeadlinesModalEl));
+            document.getElementById('openTimetableButton').addEventListener('click', () => openModal(timetableModalEl));
+
             // Modal Compiti
-            document.getElementById('closeModalButton').addEventListener('click', closeModal);
             taskFormEl.addEventListener('submit', handleSaveTask);
 
-            // Modal Orario (Visualizzazione)
-            document.getElementById('closeViewTimetableModalButton').addEventListener('click', closeTimetableModal);
+            // Modal Impegni
+            commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
+            
+            // Modal Scadenze Future
+            futureDeadlineFormEl.addEventListener('submit', handleSaveFutureDeadline);
+            
+            // Modal Chat AI
+            aiChatFormEl.addEventListener('submit', handleAiChatSubmit);
+            
+            // Modal Chat Planner (NUOVO)
+            aiPlannerChatFormEl.addEventListener('submit', handleAiPlannerChatSubmit);
             
             // Modal Conferma
             document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
             document.getElementById('confirmOk').addEventListener('click', () => {
-                if (confirmCallback) {
-                    confirmCallback();
-                }
+                if (confirmCallback) confirmCallback();
                 closeConfirm();
             });
             
-            // Modal AI (Chat)
-            closeAiModalButtonEl.addEventListener('click', closeAiModal);
-            aiChatFormEl.addEventListener('submit', handleAiChatSubmit);
-            
-            // Modal AI Planner
-            closeAiPlannerModalButtonEl.addEventListener('click', closeAiPlannerModal);
-            
-            // Modal Impegni
-            closeCommitmentsModalButtonEl.addEventListener('click', closeCommitmentsModal);
-            commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
-
-            // Nuovo Menu Dropdown
-            document.getElementById('menuAiPlanner').addEventListener('click', (e) => {
-                e.preventDefault();
-                openAiPlannerModal();
-                dropdownMenu.classList.add('hidden');
-            });
-            document.getElementById('menuCommitments').addEventListener('click', (e) => {
-                e.preventDefault();
-                openCommitmentsModal();
-                dropdownMenu.classList.add('hidden');
-            });
-            document.getElementById('menuTimetable').addEventListener('click', (e) => {
-                e.preventDefault();
-                openTimetableModal();
-                dropdownMenu.classList.add('hidden');
-            });
-
-            menuButton.addEventListener('click', (e) => {
-                e.stopPropagation(); // Impedisce al click di chiudere subito il menu
-                dropdownMenu.classList.toggle('hidden');
-            });
-
-            // Chiudi il menu se si clicca altrove
-            window.addEventListener('click', (e) => {
-                if (!menuButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                    dropdownMenu.classList.add('hidden');
-                }
+            // Chiusura generica Modal
+            document.querySelectorAll('.close-modal-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modalToClose = e.target.closest('.modal');
+                    if (modalToClose) closeModal(modalToClose);
+                });
             });
 
             // Avvia l'app
