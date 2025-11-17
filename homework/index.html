@@ -788,7 +788,7 @@
                 button.addEventListener('click', (e) => {
                     const date = e.currentTarget.dataset.date;
                     const dayKey = e.currentTarget.dataset.daykey;
-                    openModal(taskModalEl, date, dayKey);
+                    openModalNewTask(date, dayKey); // Chiama la nuova funzione specifica
                 });
             });
 
@@ -952,7 +952,7 @@
             taskFormEl.subject.value = task.subject;
             taskFormEl.description.value = task.description;
             taskFormEl.dueDate.value = task.dueDate;
-            openModal(taskModalEl);
+            openModal(taskModalEl); // Apre il modal senza resettare
         }
         
         function populateSubjectDropdown(dayKey, currentSubject = null) {
@@ -1263,20 +1263,22 @@
 
         // --- Funzioni Modal (Finestre Popup) ---
         
-        function openModal(modalEl, defaultDate = null, dayKey = null) {
-            if (modalEl === taskModalEl) {
-                taskFormEl.reset();
-                modalTitleEl.innerText = "Nuovo Compito";
-                taskIdEl.value = '';
-                
-                if (defaultDate) {
-                    taskFormEl.dueDate.value = defaultDate;
-                }
-                if (dayKey) {
-                    populateSubjectDropdown(dayKey);
-                }
-            }
+        // CORREZIONE: Funzione separata per "Nuovo Compito"
+        function openModalNewTask(defaultDate, dayKey) {
+            taskFormEl.reset(); // Resetta il form
+            modalTitleEl.innerText = "Nuovo Compito";
+            taskIdEl.value = '';
             
+            if (defaultDate) {
+                taskFormEl.dueDate.value = defaultDate;
+            }
+            if (dayKey) {
+                populateSubjectDropdown(dayKey);
+            }
+            openModal(taskModalEl);
+        }
+        
+        function openModal(modalEl) {
             modalEl.style.display = 'flex';
             lucide.createIcons({ nodes: [modalEl] });
         }
