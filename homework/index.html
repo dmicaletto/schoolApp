@@ -35,7 +35,7 @@
 
         /* Colonne dei giorni */
         .day-column {
-            flex: 0 0 90%; /* Su mobile, ogni colonna occupa il 90% */
+            flex: 0 0 100%; /* Su mobile, ogni colonna occupa il 90% */
             scroll-snap-align: start; /* Aggancia l'inizio della colonna */
             margin-right: 10px;
         }
@@ -200,7 +200,6 @@
                 
                 <!-- Pulsanti Azione (Con Menu Dropdown) -->
                 <div class="flex items-center gap-2 mt-4 sm:mt-0">
-                    
                     <button id="todayBtn" class="px-4 py-2 text-base font-medium text-blue-600 bg-blue-100 rounded-lg shadow-sm hover:bg-blue-200 transition">
                         Oggi
                     </button>
@@ -460,20 +459,9 @@
         const menuButton = document.getElementById('menuButton');
         const dropdownMenu = document.getElementById('dropdownMenu');
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        // Configurazione Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- LOGICA ORARIO FISSO ---
@@ -1138,7 +1126,7 @@ Usa la ricerca se necessario per rispondere alle domande.`;
                 payload.contents = [{ role: 'user', parts: [{ text: userPromptText }] }];
             }
 
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             try {
@@ -1178,7 +1166,7 @@ Usa la ricerca se necessario per rispondere alle domande.`;
             }
         }
         
-        // --- Funzioni AI Planner (AGGIORNATE CON IMPEGNI) ---
+        // --- Funzioni AI Planner (AGGIORNATE CON IMPEGNI E LOGICA SCADENZA) ---
 
         function openAiPlannerModal() {
             if (isAiCallPending) return;
@@ -1208,10 +1196,30 @@ Usa la ricerca se necessario per rispondere alle domande.`;
 
             const days = getWeekDays(currentWeekStart);
             const dateStrings = days.map(day => formatDate(day.date));
+            
+            // --- CORREZIONE LOGICA SCADENZA ---
+            // Cerca i compiti di questa settimana E quelli di Lun/Mar della prossima
+            const nextWeekStartDate = new Date(currentWeekStart);
+            nextWeekStartDate.setDate(currentWeekStart.getDate() + 7);
+            
+            const nextMondayDate = new Date(nextWeekStartDate);
+            nextMondayDate.setDate(nextWeekStartDate.getDate()); // Prossimo Lunedì
+            
+            const nextTuesdayDate = new Date(nextWeekStartDate);
+            nextTuesdayDate.setDate(nextWeekStartDate.getDate() + 1); // Prossimo Martedì
+            
+            const datesToScan = [
+                ...dateStrings, // Questa settimana (Lun-Ven)
+                formatDate(nextMondayDate), // Prossimo Lunedì
+                formatDate(nextTuesdayDate)  // Prossimo Martedì
+            ];
+            // --- FINE CORREZIONE ---
+
             const tasksForWeek = [];
             for (const id in allTasks) {
                 const task = allTasks[id];
-                if (dateStrings.includes(task.dueDate) && !task.completed) {
+                // Cerca i compiti con scadenza nelle date da scansionare e non completati
+                if (datesToScan.includes(task.dueDate) && !task.completed) {
                     tasksForWeek.push(`- ${task.subject}: ${task.description} (Scadenza: ${task.dueDate})`);
                 }
             }
@@ -1252,13 +1260,14 @@ Rispondi sempre in italiano.
 Formatta la risposta in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong> e titoli <h3>).
 
 Regole Chiave:
-1.  **Analizza i Dati:** Riceverai la data di oggi, l'orario scolastico (mattina), un elenco di *impegni fissi* (sport, musica, ecc.) e un elenco di compiti con scadenze.
-2.  **Pianifica solo i Pomeriggi:** Il tuo piano deve iniziare dal pomeriggio di "oggi" fino a venerdì.
-3.  **RISPETTA GLI IMPEGNI FISSI:** Gli impegni fissi hanno la priorità assoluta. Devi pianificare lo studio *attorno* a questi orari bloccati. Non sovrapporre lo studio agli impegni.
-4.  **Dai Priorità (Compiti):** Assegna priorità ai compiti con scadenza più vicina.
-5.  **Sii Realistico:** Non sovraccaricare. Alterna materie (es. non 2 ore di fila di Matematica). Includi brevi pause.
-6.  **Struttura:** Dividi il piano per giorno (es. <h3>Piano per Oggi (Martedì)</h3>). Per ogni giorno, crea una lista puntata <ul><li> con i compiti da fare e un orario suggerito (es. "15:00-15:45: Matematica"). Assicurati di menzionare gli impegni fissi nel piano (es. "17:00-19:00: Pallavolo").
-7.  **Tono:** Sii incoraggiante e positivo. Inizia con una breve frase di incoraggiamento.`;
+1.  **REGOLA CRITICA DI PIANIFICAZIONE (La più importante):** La 'data di scadenza' (es. "Scadenza: 2024-11-19") è il giorno in cui il compito viene *consegnato* a scuola (la mattina). Pertanto, il lavoro deve essere completato la sera *prima*. Non pianificare MAI un compito per il giorno stesso della sua scadenza. Esempio: un compito con 'Scadenza: 2024-11-19' (Martedì) deve essere pianificato e completato entro 'Lunedì 18' sera.
+2.  **Analizza i Dati:** Riceverai la data di oggi, l'orario scolastico (mattina), un elenco di *impegni fissi* (sport, musica, ecc.) e un elenco di compiti con scadenze.
+3.  **Pianifica solo i Pomeriggi:** Il tuo piano deve iniziare dal pomeriggio di "oggi" fino a venerdì.
+4.  **RISPETTA GLI IMPEGNI FISSI:** Gli impegni fissi hanno la priorità assoluta. Devi pianificare lo studio *attorno* a questi orari bloccati. Non sovrapporre lo studio agli impegni.
+5.  **Dai Priorità (Compiti):** Assegna priorità ai compiti con scadenza più vicina (rispettando la Regola #1).
+6.  **Sii Realistico:** Non sovraccaricare. Alterna materie (es. non 2 ore di fila di Matematica). Includi brevi pause.
+7.  **Struttura:** Dividi il piano per giorno (es. <h3>Piano per Oggi (Martedì)</h3>). Per ogni giorno, crea una lista puntata <ul><li> con i compiti da fare e un orario suggerito (es. "15:00-15:45: Matematica"). Assicurati di menzionare gli impegni fissi nel piano (es. "17:00-19:00: Pallavolo").
+8.  **Tono:** Sii incoraggiante e positivo. Inizia con una breve frase di incoraggiamento.`;
             
             const userQuery = `Ciao! Oggi è ${today}.
 Questo è il mio orario scolastico (so quando sono a scuola la mattina):
@@ -1267,12 +1276,12 @@ ${formattedTimetable}
 Questi sono i miei *impegni fissi* (sport, ecc.) da rispettare:
 ${commitmentsForWeek.length > 0 ? commitmentsForWeek.join('\n') : "Nessun impegno fisso questa settimana."}
 
-Questi sono i miei *compiti* da fare per questa settimana:
+Questi sono i miei *compiti* da fare (ricorda la regola sulla scadenza!):
 ${tasksForWeek.join('\n')}
 
 Per favore, creami un piano di studio pomeridiano (da oggi a venerdì) che rispetti i miei impegni fissi e mi permetta di completare i compiti in tempo.`;
 
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             const payload = {
