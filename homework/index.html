@@ -460,9 +460,20 @@
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const menuDropdown = document.getElementById('menuDropdown');
 
-        // Configurazione Firebase (iniettata dall'ambiente)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
+          authDomain: "homework-98001.firebaseapp.com",
+          projectId: "homework-98001",
+          storageBucket: "homework-98001.firebasestorage.app",
+          messagingSenderId: "262210380418",
+          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
+          measurementId: "G-GXB43QLXN3"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Orario Fisso ---
@@ -1110,7 +1121,7 @@
         }
         
         async function callGeminiChatApi(useSearch) {
-            const apiKey = "";
+            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const payload = {
@@ -1271,7 +1282,7 @@
         }
 
         async function callGeminiPlannerChatApi() {
-            const apiKey = "";
+            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const payload = {
