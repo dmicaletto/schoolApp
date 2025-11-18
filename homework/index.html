@@ -4,20 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bacheca Compiti Settimana</title>
-	<link rel="manifest" href="./manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default"> 
-	<meta name="apple-mobile-web-app-title" content="Compiti">
-	<!-- ICONA PER iOS (Apple) -->
-	<link rel="apple-touch-icon" href="./images/ingranaggio-matita.png">
-	<meta name="theme-color" content="#3B82F6">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Chart.js per il grafico (Aggiunto per Punto 2) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Meta tags per iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Compiti">
+    <meta name="theme-color" content="#3B82F6">
+
+    <!-- Script per generare il MANIFEST.JSON dinamicamente (per Android/PWA) -->
+    <script>
+        const manifest = {
+            "name": "Bacheca Compiti",
+            "short_name": "Compiti",
+            "start_url": window.location.href,
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#3B82F6",
+            "icons": [
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/3238/3238016.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestURL;
+        document.head.appendChild(link);
+    </script>
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         /* Stile per la scrollbar orizzontale (sottile e grigia) */
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -34,6 +59,7 @@
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
+            gap: 0.75rem; /* 12px */
         }
 
         /* Colonne dei giorni */
@@ -45,9 +71,6 @@
         @media (min-width: 640px) { /* sm: */
             .day-column {
                 flex: 1 1 0%; /* Su schermi più grandi, si dividono lo spazio */
-            }
-            .week-scroll-container {
-                gap: 0.75rem; /* 12px */
             }
         }
         
@@ -133,7 +156,7 @@
         }
         #timetableModalTable table {
             width: 100%;
-            min-width: 600px;
+            min-width: 600px; /* Forza lo scorrimento su mobile */
             border-collapse: collapse;
         }
         #timetableModalTable th, #timetableModalTable td {
@@ -188,10 +211,8 @@
 </head>
 <body class="bg-gray-50 text-gray-900">
 
-    <!-- Contenitore Principale -->
     <div class="flex flex-col h-screen">
 
-        <!-- 1. Intestazione (Header) -->
         <header class="p-4 bg-white border-b border-gray-200 sticky top-0 z-30">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
                 
@@ -211,8 +232,6 @@
 
                 <!-- Pulsanti Azione (Destra) -->
                 <div class="flex items-center gap-2">
-                    <!-- Tasto "Oggi" rimosso -->
-                    
                     <!-- Menu Dropdown -->
                     <div class="relative" id="menuContainer">
                         <button id="menuToggleBtn" class="p-2 rounded-lg hover:bg-gray-100">
@@ -272,6 +291,7 @@
                 <div class="mb-4">
                     <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Materia</label>
                     <select id="subject" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white" required>
+                        <!-- Opzioni generate da JS -->
                     </select>
                 </div>
                 <div class="mb-4">
@@ -295,6 +315,7 @@
         <div class="modal-content max-w-3xl">
             <h2 class="text-lg font-semibold mb-4">Orario Settimanale</h2>
             <div id="timetableModalTable" class="rounded-lg border">
+                <!-- Tabella orario generata da JS -->
             </div>
             <div class="flex justify-end mt-6">
                 <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Chiudi</button>
@@ -394,7 +415,7 @@
         </div>
     </div>
 
-    <!-- 10. Modal Progressi e Statistiche (Aggiunto per Punto 2) -->
+    <!-- 10. Modal Progressi e Statistiche -->
     <div id="progressModal" class="modal">
         <div class="modal-content">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -403,7 +424,6 @@
             </h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Colonna Statistiche -->
                 <div class="space-y-4">
                     <div>
                         <h3 class="font-semibold text-md mb-2">Progressi di Oggi</h3>
@@ -421,7 +441,6 @@
                     </div>
                 </div>
                 
-                <!-- Colonna Grafico -->
                 <div class="flex flex-col items-center justify-center">
                     <h3 class="font-semibold text-md mb-2">Panoramica Settimana</h3>
                     <div class="w-full max-w-[200px] h-[200px]">
@@ -430,7 +449,6 @@
                 </div>
             </div>
             
-            <!-- Sezione Premio -->
             <div id="prizeSection" class="mt-6">
                 <span data-lucide="Trophy" class="w-12 h-12 text-yellow-500 mx-auto"></span>
                 <h3 class="text-xl font-bold text-yellow-800 mt-2">Settimana Completata!</h3>
@@ -444,7 +462,6 @@
     </div>
 
 
-    <!-- Firebase e Script App -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -480,6 +497,7 @@
         let taskUnsubscribe = null;
         let commitmentUnsubscribe = null;
         let futureDeadlinesUnsubscribe = null;
+        let localCommitments = {}; // Cache impegni
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -520,7 +538,7 @@
         const futureDeadlineFormEl = document.getElementById('futureDeadlineForm');
         const futureDeadlinesListEl = document.getElementById('futureDeadlinesList');
         
-        // Elementi Progressi (Aggiunto per Punto 2)
+        // Elementi Progressi
         const progressModalEl = document.getElementById('progressModal');
         const dailyStatsEl = document.getElementById('dailyStats');
         const weeklyStatsEl = document.getElementById('weeklyStats');
@@ -532,20 +550,8 @@
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const menuDropdown = document.getElementById('menuDropdown');
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
-          authDomain: "homework-98001.firebaseapp.com",
-          projectId: "homework-98001",
-          storageBucket: "homework-98001.firebasestorage.app",
-          messagingSenderId: "262210380418",
-          appId: "1:262210380418:web:807be6bcddb8a3cb720a9b",
-          measurementId: "G-GXB43QLXN3"
-        };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Orario Fisso ---
@@ -632,11 +638,12 @@
             
             commitmentUnsubscribe = onSnapshot(commitmentDocRef, (docSnap) => {
                 console.log("Dati impegni ricevuti.");
-                const commitments = docSnap.exists() ? docSnap.data() : {};
+                localCommitments = docSnap.exists() ? docSnap.data() : {};
+                // Popola il modal
                 for (const dayKey of Object.keys(dayNames)) {
                     const inputEl = document.getElementById(`commitment-${dayKey}`);
                     if (inputEl) {
-                        inputEl.value = commitments[dayKey] || '';
+                        inputEl.value = localCommitments[dayKey] || '';
                     }
                 }
                 renderWeekDisplay(currentWeekStart);
@@ -723,12 +730,7 @@
             }
         }
         
-        async function getCommitments() {
-            if (!userId) return {}; // Aggiunto controllo per userId
-            const commitmentDocRef = doc(db, "artifacts", appId, "users", userId, "data", "commitments");
-            const docSnap = await getDoc(commitmentDocRef);
-            return docSnap.exists() ? docSnap.data() : {};
-        }
+        // RIMOSSO getCommitments (uso localCommitments)
 
 
         // --- Funzioni Scadenze Future ---
@@ -826,14 +828,15 @@
             lucide.createIcons();
         }
 
-        async function renderWeekDisplay(startDate) {
+        function renderWeekDisplay(startDate) {
             if (!weekScrollContainerEl || !userId) return;
             
             weekScrollContainerEl.innerHTML = '';
             currentWeekDisplayEl.textContent = formatWeekRange(startDate);
 
             const days = getWeekDays(startDate);
-            const commitments = await getCommitments();
+            // Usa localCommitments sincrono
+            const commitments = localCommitments;
             const todayStr = formatDate(new Date());
 
             for (const day of days) {
@@ -983,7 +986,7 @@
             const contentDiv = document.createElement('div');
             contentDiv.className = 'flex-1 cursor-pointer min-w-0';
             contentDiv.innerHTML = `
-                <p class="font-semibold text-sm ${data.completed ? 'text-green-800 line-through' : 'text-gray-800'}">${data.subject}</p>
+                <p class="font-semibold text-sm truncate ${data.completed ? 'text-green-800 line-through' : 'text-gray-800'}">${data.subject}</p>
                 <p class="text-xs break-words ${data.completed ? 'text-green-600 line-through' : 'text-gray-600'}">${data.description}</p>
             `;
             contentDiv.addEventListener('click', () => handleEditTask(id));
@@ -1042,26 +1045,19 @@
             }
         }
 
-        // CORREZIONE BUG: Funzione per gestire la modifica
         function handleEditTask(id) {
             const task = allTasks[id];
             if (!task) return;
             
-            // Trova il 'dayKey' (mon, tue, ...) dalla data del compito
             const dayKey = getDayKeyFromDate(task.dueDate);
-            
-            // Popola il dropdown con le materie di quel giorno
-            // e assicurati che la materia attuale sia selezionata
             populateSubjectDropdown(dayKey, task.subject);
 
-            // Imposta i valori nel form
             modalTitleEl.innerText = "Modifica Compito";
             taskIdEl.value = id;
             taskFormEl.subject.value = task.subject;
             taskFormEl.description.value = task.description;
             taskFormEl.dueDate.value = task.dueDate;
             
-            // Apri il modal
             openModal(taskModalEl);
         }
         
@@ -1154,7 +1150,7 @@
         }
         
         async function callGeminiChatApi(useSearch) {
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const payload = {
@@ -1244,16 +1240,15 @@
             const today = new Date();
             const startOfCurrentWeek = getStartOfWeek(currentWeekStart);
             
-            // Finestra estesa per i compiti
             const endOfTaskWindow = new Date(startOfCurrentWeek);
-            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10); // Guarda 10 giorni avanti
+            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10);
 
             const relevantTasks = Object.values(allTasks).filter(task => {
                 const dueDate = new Date(task.dueDate + 'T00:00:00');
                 return !task.completed && dueDate >= today && dueDate <= endOfTaskWindow;
             });
             
-            const commitments = await getCommitments();
+            const commitments = localCommitments; // USA LOCALE
             const futureDeadlines = allFutureDeadlines;
 
             const todayStr = today.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -1305,7 +1300,7 @@
         }
 
         async function callGeminiPlannerChatApi() {
-            const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
             const payload = {
@@ -1375,33 +1370,27 @@
         // --- Funzioni Progressi (Punto 2) ---
         
         function handleOpenProgressModal() {
-            // 1. Calcola Statistiche
             const todayStr = formatDate(new Date());
             const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
             
             const allTasksArray = Object.values(allTasks);
             
-            // Statistiche Giornaliere
             const todayTasks = allTasksArray.filter(t => t.dueDate === todayStr);
             const todayCompleted = todayTasks.filter(t => t.completed).length;
             dailyStatsEl.textContent = `${todayCompleted} / ${todayTasks.length}`;
             
-            // Statistiche Settimanali
             const weekTasks = allTasksArray.filter(t => weekDays.includes(t.dueDate));
             const weekCompleted = weekTasks.filter(t => t.completed).length;
             weeklyStatsEl.textContent = `${weekCompleted} / ${weekTasks.length}`;
             
-            // 2. Mostra Premio
             if (weekTasks.length > 0 && weekCompleted === weekTasks.length) {
                 prizeSectionEl.style.display = 'block';
             } else {
                 prizeSectionEl.style.display = 'none';
             }
             
-            // 3. Renderizza Grafico
             renderProgressChart(weekCompleted, weekTasks.length - weekCompleted);
             
-            // 4. Apri Modal
             openModal(progressModalEl);
         }
         
@@ -1527,8 +1516,8 @@
         }
         
         function getDayKeyFromDate(dateStr) {
-            const date = new Date(dateStr + 'T00:00:00'); // Usa T00:00:00 per fuso orario locale
-            const dayIndex = date.getDay(); // 0=Dom, 1=Lun,...
+            const date = new Date(dateStr + 'T00:00:00');
+            const dayIndex = date.getDay();
             const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
             return dayKeys[dayIndex];
         }
@@ -1587,7 +1576,7 @@
             document.getElementById('openCommitmentsButton').addEventListener('click', () => openModal(commitmentsModalEl));
             document.getElementById('openFutureDeadlinesButton').addEventListener('click', () => openModal(futureDeadlinesModalEl));
             document.getElementById('openTimetableButton').addEventListener('click', () => openModal(timetableModalEl));
-            document.getElementById('openProgressButton').addEventListener('click', handleOpenProgressModal); // Aggiunto
+            document.getElementById('openProgressButton').addEventListener('click', handleOpenProgressModal);
 
             taskFormEl.addEventListener('submit', handleSaveTask);
             commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
