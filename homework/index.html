@@ -40,7 +40,7 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Versione UMD stabile -->
+    <!-- Versione UMD corretta per browser -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -244,6 +244,11 @@
                             <span data-lucide="menu" class="w-5 h-5 text-gray-700"></span>
                         </button>
                         <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border z-50">
+                            <!-- NUOVA VOCE: Info Studente -->
+                            <a id="openStudentInfoButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-b">
+                                <span data-lucide="user-circle" class="w-5 h-5 text-blue-500"></span>
+                                Info Studente
+                            </a>
                             <a id="openAiPlannerButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
                                 <span data-lucide="brain-circuit" class="w-5 h-5 text-purple-600"></span>
                                 AI Planner
@@ -274,10 +279,18 @@
         <div id="notificationBanner" class="hidden sticky top-[73px] z-20 shadow-md">
             <!-- Il contenuto verrà generato da JS -->
         </div>
+        
+        <!-- Area errori globale -->
+        <div id="globalError" class="hidden max-w-7xl mx-auto p-4 mt-4 bg-red-100 border border-red-400 text-red-700 rounded text-center">
+            Si è verificato un errore. <br> <span id="globalErrorMessage"></span>
+        </div>
 
         <!-- Spinner di caricamento principale -->
         <div id="loadingSpinner" class="flex items-center justify-center h-full">
-            <span data-lucide="loader" class="w-12 h-12 text-blue-500 animate-spin"></span>
+            <div class="text-center">
+                <span data-lucide="loader" class="w-12 h-12 text-blue-500 animate-spin mx-auto"></span>
+                <p class="mt-2 text-gray-500">Caricamento...</p>
+            </div>
         </div>
 
         <!-- 2. Bacheca Settimanale (Contenuto) -->
@@ -288,7 +301,7 @@
         </main>
     </div>
 
-    <!-- 3. Modal (finestra popup) per Aggiungere/Modificare Compito -->
+    <!-- 3. Modal Compito -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle" class="text-lg font-semibold mb-4">Nuovo Compito</h2>
@@ -316,7 +329,7 @@
         </div>
     </div>
 
-    <!-- 4. Modal per Orario Settimanale (Sola lettura) -->
+    <!-- 4. Modal Orario -->
     <div id="timetableModal" class="modal">
         <div class="modal-content max-w-3xl">
             <h2 class="text-lg font-semibold mb-4">Orario Settimanale</h2>
@@ -329,7 +342,7 @@
         </div>
     </div>
     
-    <!-- 5. Modal di Conferma Eliminazione -->
+    <!-- 5. Modal Conferma -->
     <div id="confirmModal" class="modal" style="z-index: 60;">
         <div class="confirm-modal-content">
             <h3 id="confirmTitle" class="text-lg font-semibold mb-3">Sei sicuro?</h3>
@@ -341,7 +354,7 @@
         </div>
     </div>
 
-    <!-- 6. Modal Assistente AI (Chat) -->
+    <!-- 6. Modal Assistente AI -->
     <div id="aiAssistantModal" class="modal">
         <div class="modal-content">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -362,7 +375,7 @@
         </div>
     </div>
     
-    <!-- 7. Modal AI Planner (Chat) -->
+    <!-- 7. Modal AI Planner -->
     <div id="aiPlannerModal" class="modal">
          <div class="modal-content max-w-2xl">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -383,7 +396,7 @@
         </div>
     </div>
     
-    <!-- 8. Modal Impegni Settimanali -->
+    <!-- 8. Modal Impegni -->
     <div id="commitmentsModal" class="modal">
         <div class="modal-content max-w-2xl">
             <h2 class="text-lg font-semibold mb-4">Impegni Settimanali</h2>
@@ -421,7 +434,7 @@
         </div>
     </div>
 
-    <!-- 10. Modal Progressi e Statistiche -->
+    <!-- 10. Modal Progressi -->
     <div id="progressModal" class="modal">
         <div class="modal-content">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -432,10 +445,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-4">
                     <div>
-                        <!-- MODIFICATO TITOLO -->
                         <h3 class="font-semibold text-md mb-2">Compiti per Domani</h3>
                         <div class="p-4 bg-gray-50 rounded-lg">
-                            <!-- MODIFICATO LABEL -->
                             <p class="text-sm text-gray-600">Completati (scadenza domani):</p>
                             <p id="dailyStats" class="text-2xl font-bold text-gray-800">0 / 0</p>
                         </div>
@@ -468,6 +479,55 @@
             </div>
         </div>
     </div>
+    
+    <!-- 11. Modal Info Studente -->
+    <div id="studentInfoModal" class="modal">
+        <div class="modal-content max-w-lg">
+            <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span data-lucide="user-circle" class="w-5 h-5 text-blue-600"></span>
+                Info Studente
+            </h2>
+            <form id="studentInfoForm" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="studentName" class="block text-sm font-medium text-gray-700">Nome</label>
+                        <input type="text" id="studentName" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="studentSurname" class="block text-sm font-medium text-gray-700">Cognome</label>
+                        <input type="text" id="studentSurname" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="studentAge" class="block text-sm font-medium text-gray-700">Età</label>
+                        <input type="number" id="studentAge" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="studentGender" class="block text-sm font-medium text-gray-700">Sesso</label>
+                        <select id="studentGender" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white">
+                            <option value="Femmina">Femmina</option>
+                            <option value="Maschio">Maschio</option>
+                            <option value="Altro">Altro</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="studentSchool" class="block text-sm font-medium text-gray-700">Istituto / Scuola</label>
+                    <input type="text" id="studentSchool" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="es. Liceo Scientifico G. Galilei">
+                </div>
+                <div>
+                    <label for="studentClass" class="block text-sm font-medium text-gray-700">Classe</label>
+                    <input type="text" id="studentClass" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm" placeholder="es. 2^ B">
+                </div>
+                
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
+                    <button type="button" class="close-modal-btn px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Annulla</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Salva Profilo</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <script type="module">
@@ -494,7 +554,7 @@
             setLogLevel 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Variabili Globali e Configurazione ---
+        // --- Variabili Globali ---
         
         let db, auth;
         let userId = null;
@@ -505,7 +565,9 @@
         let taskUnsubscribe = null;
         let commitmentUnsubscribe = null;
         let futureDeadlinesUnsubscribe = null;
-        let localCommitments = {}; // Cache impegni
+        let localCommitments = {}; 
+        let studentInfoUnsubscribe = null;
+        let localStudentInfo = {}; 
 
         // Elementi UI
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -513,6 +575,8 @@
         const weekScrollContainerEl = document.getElementById('weekScrollContainer');
         const currentWeekDisplayEl = document.getElementById('currentWeekDisplay');
         const notificationBannerEl = document.getElementById('notificationBanner');
+        const globalErrorEl = document.getElementById('globalError');
+        const globalErrorMessageEl = document.getElementById('globalErrorMessage');
         
         const taskModalEl = document.getElementById('taskModal');
         const taskFormEl = document.getElementById('taskForm');
@@ -546,7 +610,6 @@
         const futureDeadlineFormEl = document.getElementById('futureDeadlineForm');
         const futureDeadlinesListEl = document.getElementById('futureDeadlinesList');
         
-        // Elementi Progressi
         const progressModalEl = document.getElementById('progressModal');
         const dailyStatsEl = document.getElementById('dailyStats');
         const weeklyStatsEl = document.getElementById('weeklyStats');
@@ -554,12 +617,17 @@
         const prizeSectionEl = document.getElementById('prizeSection');
         let progressChartInstance = null;
         
+        const studentInfoModalEl = document.getElementById('studentInfoModal');
+        const studentInfoFormEl = document.getElementById('studentInfoForm');
+        
         const menuContainer = document.getElementById('menuContainer');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const menuDropdown = document.getElementById('menuDropdown');
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
+        // --- Configurazione Firebase Robusta ---
+        
+        const firebaseConfigEnv = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const firebaseConfigUser = {
           apiKey: "AIzaSyBV6ibBLVIaJn__AK8tokn8wtwRBC9eDwc",
           authDomain: "homework-98001.firebaseapp.com",
           projectId: "homework-98001",
@@ -569,9 +637,10 @@
           measurementId: "G-GXB43QLXN3"
         };
         
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
+        // Usa quella d'ambiente se c'è, altrimenti usa quella hardcoded (per download/locale)
+        const firebaseConfig = firebaseConfigEnv || firebaseConfigUser;
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- Orario Fisso ---
@@ -590,10 +659,15 @@
         
         async function initializeFirebase() {
             try {
+                // Check preventivo libreria Lucide
+                if (typeof lucide === 'undefined') {
+                    throw new Error("Libreria icone non caricata. Controlla la connessione.");
+                }
+
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                setLogLevel('Debug');
+                setLogLevel('error'); // Meno verboso in console
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -610,13 +684,23 @@
                             }
                         } catch (authError) {
                             console.error("Errore di autenticazione:", authError);
-                            showError("Impossibile autenticarsi. Riprova più tardi.");
+                            showGlobalError("Impossibile autenticarsi. Verifica la connessione.");
                         }
                     }
                 });
             } catch (e) {
                 console.error("Errore Inizializzazione Firebase:", e);
-                showError("Errore critico nell'avvio dell'app.");
+                showGlobalError("Errore critico nell'avvio dell'app: " + e.message);
+            }
+        }
+        
+        function showGlobalError(msg) {
+            loadingSpinner.style.display = 'none';
+            if (globalErrorEl && globalErrorMessageEl) {
+                globalErrorMessageEl.textContent = msg;
+                globalErrorEl.classList.remove('hidden');
+            } else {
+                alert(msg);
             }
         }
 
@@ -624,7 +708,7 @@
             if (!userId) return;
 
             loadingSpinner.style.display = 'none';
-            weekGridEl.style.display = 'block';
+            weekGridEl.classList.remove('hidden'); // Mostra griglia
 
             setupTimetableModal();
             setupCommitmentsModal();
@@ -632,7 +716,9 @@
             attachTaskListener();
             attachCommitmentListener();
             attachFutureDeadlinesListener();
+            attachStudentInfoListener(); 
             
+            // Render iniziale (vuoto, si popolerà coi listener)
             renderWeekDisplay(currentWeekStart);
         }
 
@@ -659,7 +745,6 @@
             commitmentUnsubscribe = onSnapshot(commitmentDocRef, (docSnap) => {
                 console.log("Dati impegni ricevuti.");
                 localCommitments = docSnap.exists() ? docSnap.data() : {};
-                // Popola il modal
                 for (const dayKey of Object.keys(dayNames)) {
                     const inputEl = document.getElementById(`commitment-${dayKey}`);
                     if (inputEl) {
@@ -668,6 +753,24 @@
                 }
                 renderWeekDisplay(currentWeekStart);
             }, (error) => console.error("Errore listener impegni:", error));
+        }
+        
+        function attachStudentInfoListener() {
+            if (studentInfoUnsubscribe) studentInfoUnsubscribe();
+            const studentInfoDocRef = doc(db, "artifacts", appId, "users", userId, "data", "student_info");
+            
+            studentInfoUnsubscribe = onSnapshot(studentInfoDocRef, (docSnap) => {
+                console.log("Dati studente ricevuti.");
+                localStudentInfo = docSnap.exists() ? docSnap.data() : {};
+                
+                document.getElementById('studentName').value = localStudentInfo.name || '';
+                document.getElementById('studentSurname').value = localStudentInfo.surname || '';
+                document.getElementById('studentAge').value = localStudentInfo.age || '';
+                document.getElementById('studentGender').value = localStudentInfo.gender || 'Femmina';
+                document.getElementById('studentSchool').value = localStudentInfo.school || '';
+                document.getElementById('studentClass').value = localStudentInfo.classRoom || '';
+                
+            }, (error) => console.error("Errore listener info studente:", error));
         }
 
         function attachFutureDeadlinesListener() {
@@ -750,7 +853,30 @@
             }
         }
         
-        // RIMOSSO getCommitments (uso localCommitments)
+        // --- Funzioni Info Studente ---
+        
+        async function handleSaveStudentInfo(e) {
+            e.preventDefault();
+            if (!userId) return;
+            
+            const studentData = {
+                name: document.getElementById('studentName').value.trim(),
+                surname: document.getElementById('studentSurname').value.trim(),
+                age: document.getElementById('studentAge').value.trim(),
+                gender: document.getElementById('studentGender').value,
+                school: document.getElementById('studentSchool').value.trim(),
+                classRoom: document.getElementById('studentClass').value.trim()
+            };
+            
+            try {
+                const studentInfoDocRef = doc(db, "artifacts", appId, "users", userId, "data", "student_info");
+                await setDoc(studentInfoDocRef, studentData);
+                console.log("Info studente salvate");
+                closeModal(studentInfoModalEl);
+            } catch (error) {
+                console.error("Errore salvataggio info studente:", error);
+            }
+        }
 
 
         // --- Funzioni Scadenze Future ---
@@ -849,7 +975,6 @@
                 </div>`;
             notificationBannerEl.style.display = 'block';
             
-            // Add listener to the close button
             const closeBtn = document.getElementById('closeNotificationBtn');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
@@ -866,7 +991,6 @@
             currentWeekDisplayEl.textContent = formatWeekRange(startDate);
 
             const days = getWeekDays(startDate);
-            // Usa localCommitments sincrono
             const commitments = localCommitments;
             const todayStr = formatDate(new Date());
 
@@ -875,14 +999,11 @@
                 const dayKey = day.value.toLowerCase();
                 
                 const timetableHtml = generateTimetableHTML(dayKey);
-                
                 const commitmentHtml = commitments[dayKey] 
                     ? `<p class="text-xs text-gray-800 font-medium break-words">${commitments[dayKey]}</p>` 
                     : '<p class="text-xs text-gray-400 italic">Nessun impegno</p>';
-                    
                 const radarHtml = generateRadarHTML(day.date);
 
-                // MODIFICA: Bordo grigio per giorni non correnti
                 const dayCard = document.createElement('div');
                 const borderClass = dateStr === todayStr ? 'border-2 border-blue-500' : 'border border-gray-300';
                 dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${borderClass}`;
@@ -1078,7 +1199,6 @@
             }
         }
 
-        // CORREZIONE BUG: Funzione per gestire la modifica
         function handleEditTask(id) {
             const task = allTasks[id];
             if (!task) return;
@@ -1155,10 +1275,20 @@
                 currentAiChatHistory.forEach(msg => renderAiChatMessage(msg.role, msg.parts[0].text));
             } else {
                 renderAiChatMessage("model", "...", true);
-                const prompt = `Agisci come un tutor scolastico amichevole e incoraggiante. Ho questo compito:
+                const studentInfo = localStudentInfo;
+                const prompt = `Agisci come un tutor scolastico amichevole e incoraggiante.
+                INFORMAZIONI STUDENTE:
+                - Nome: ${studentInfo.name || 'Studente'}
+                - Età: ${studentInfo.age || 'non specificata'}
+                - Sesso: ${studentInfo.gender || 'non specificato'}
+                - Scuola: ${studentInfo.school || 'non specificata'}
+                - Classe: ${studentInfo.classRoom || 'non specificata'}
+                
+                COMPITO:
                 - Materia: ${task.subject}
                 - Descrizione: ${task.description}
-                Basandoti su informazioni aggiornate (usa la ricerca Google), dammi una brevissima spiegazione (massimo 2 frasi) dell'argomento principale e 3 consigli pratici e concisi per svolgerlo al meglio. Formatta la risposta in HTML semplice (paragrafi e liste).`;
+                
+                Basandoti su queste info, dammi una brevissima spiegazione (massimo 2 frasi) dell'argomento principale e 3 consigli pratici e concisi per svolgerlo al meglio. Formatta la risposta in HTML semplice (paragrafi e liste). Rivolgiti allo studente per nome se disponibile.`;
                 
                 const initialMessage = { role: "user", parts: [{ text: prompt }] };
                 currentAiChatHistory.push(initialMessage);
@@ -1187,11 +1317,14 @@
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
+            const studentInfo = localStudentInfo;
+            const systemContext = `Agisci come un tutor scolastico amichevole per ${studentInfo.name || 'lo studente'}. Età: ${studentInfo.age || '?'}, Classe: ${studentInfo.classRoom || '?'}. Usa un linguaggio adatto. Basa le tue risposte su informazioni verificate. Formatta sempre le risposte in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong>).`;
+
             const payload = {
                 contents: currentAiChatHistory,
                 tools: useSearch ? [{ "google_search": {} }] : [],
                 systemInstruction: {
-                    parts: [{ text: "Agisci come un tutor scolastico amichevole, conciso e incoraggiante per uno studente di scuola media. Usa un linguaggio semplice e chiaro. Basa le tue risposte su informazioni verificate (usando la ricerca). Formatta sempre le risposte in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong>)." }]
+                    parts: [{ text: systemContext }]
                 }
             };
 
@@ -1273,43 +1406,47 @@
             
             const today = new Date();
             const startOfCurrentWeek = getStartOfWeek(currentWeekStart);
-            
-            // Finestra estesa per i compiti
             const endOfTaskWindow = new Date(startOfCurrentWeek);
-            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10); // Guarda 10 giorni avanti
+            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10); 
 
             const relevantTasks = Object.values(allTasks).filter(task => {
                 const dueDate = new Date(task.dueDate + 'T00:00:00');
                 return !task.completed && dueDate >= today && dueDate <= endOfTaskWindow;
             });
             
-            const commitments = localCommitments; // USA LOCALE
+            const commitments = localCommitments;
             const futureDeadlines = allFutureDeadlines;
+            const studentInfo = localStudentInfo;
 
             const todayStr = today.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
             const endOfWeek = new Date(startOfCurrentWeek);
             endOfWeek.setDate(startOfCurrentWeek.getDate() + 4);
 
-            let initialPrompt = `Agisci come un "Tutor di Pianificazione" esperto per uno studente di scuola media.
+            let initialPrompt = `Agisci come un "Tutor di Pianificazione" esperto per uno studente.
+            INFORMAZIONI STUDENTE:
+            - Nome: ${studentInfo.name || 'Studente'}
+            - Età: ${studentInfo.age || '?'}
+            - Scuola: ${studentInfo.school || '?'}
+            - Classe: ${studentInfo.classRoom || '?'}
+            
             Oggi è ${todayStr}.
             
-            REGOLA FONDAMENTALE: Un compito con "Scadenza: Martedì" significa che va consegnato Martedì mattina. Il lavoro deve essere completato entro Lunedì sera. Non pianificare MAI un compito nel giorno stesso della sua scadenza.
+            REGOLA FONDAMENTALE: Un compito con "Scadenza: Martedì" va consegnato Martedì mattina. Il lavoro deve essere completato entro Lunedì sera. Non pianificare MAI un compito nel giorno stesso della sua scadenza.
             
             Ecco i dati:
             1. ORARIO SCOLASTICO (L-V, 8:00-14:00): ${JSON.stringify(timetable)}
-            2. IMPEGNI FISSI (Sport, ecc. - Questi orari sono BLOCCATI): ${JSON.stringify(commitments)}
-            3. SCADENZE FUTURE (Verifiche, Interrogazioni - Inizia a pianificare il ripasso se sono tra 7-14 giorni): ${futureDeadlines.map(d => `- ${d.description} (Scadenza: ${d.date})`).join('\n') || 'Nessuna'}
-            4. COMPITI DA FARE (Non completati): ${relevantTasks.map(t => `- Materia: ${t.subject}, Descrizione: ${t.description} (Scadenza: ${t.dueDate})`).join('\n') || 'Nessuno'}
+            2. IMPEGNI FISSI (Sport, ecc. - BLOCCATI): ${JSON.stringify(commitments)}
+            3. SCADENZE FUTURE (7-14gg): ${futureDeadlines.map(d => `- ${d.description} (Scadenza: ${d.date})`).join('\n') || 'Nessuna'}
+            4. COMPITI DA FARE: ${relevantTasks.map(t => `- Materia: ${t.subject}, Descrizione: ${t.description} (Scadenza: ${t.dueDate})`).join('\n') || 'Nessuno'}
             
             OBIETTIVO:
-            Crea un piano di studio realistico, pomeriggio per pomeriggio, da oggi fino a Venerdì (${endOfWeek.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}).
-            - Dai priorità ai compiti con scadenza più vicina (rispettando la REGOLA FONDAMENTALE).
-            - Tieni conto degli orari bloccati dagli impegni.
-            - Inserisci piccole sessioni di ripasso per le scadenze future, se opportuno.
-            - Suggerisci un ordine sensato e pause.
-            - Sii conciso e incoraggiante.
-            - Formatta la risposta in HTML semplice (intestazioni <h3> per i giorni, liste <ul><li> per i compiti).
-            - Concludi chiedendomi se voglio apportare modifiche.
+            Crea un piano di studio realistico per ${studentInfo.name || 'lo studente'}, pomeriggio per pomeriggio, da oggi fino a Venerdì (${endOfWeek.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}).
+            - Dai priorità ai compiti con scadenza più vicina.
+            - Rispetta gli impegni fissi.
+            - Suggerisci pause.
+            - Sii conciso e incoraggiante, chiamalo per nome.
+            - Formatta la risposta in HTML semplice (<h3>, <ul>, <li>).
+            - Concludi chiedendo se va bene.
             `;
             
             const initialMessage = { role: "user", parts: [{ text: initialPrompt }] };
@@ -1341,10 +1478,7 @@
             const payload = {
                 contents: currentAiPlannerChatHistory,
                 systemInstruction: {
-                    parts: [{ text: `Sei un "Tutor di Pianificazione" esperto per uno studente di scuola media.
-                    Il tuo obiettivo è creare e modificare un piano di studio settimanale.
-                    REGOLA FONDAMENTALE: Un compito con "Scadenza: Martedì" va finito entro Lunedì sera. Non pianificare MAI un compito nel giorno stesso della sua scadenza.
-                    Sii amichevole, conciso e usa sempre HTML semplice (<h3>, <ul>, <li>, <strong>) per formattare i piani di studio.` }]
+                    parts: [{ text: `Sei un "Tutor di Pianificazione" esperto. Obiettivo: creare/modificare piano di studio settimanale. REGOLA: Compito scadenza X va fatto entro sera X-1. Sii amichevole, conciso, usa HTML semplice.` }]
                 }
             };
 
@@ -1405,17 +1539,17 @@
         // --- Funzioni Progressi (Punto 2) ---
         
         function handleOpenProgressModal() {
+            const todayStr = formatDate(new Date());
+            const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
+            
+            const allTasksArray = Object.values(allTasks);
+            
             // Modifica: Statistiche per DOMANI
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(today.getDate() + 1);
             const tomorrowStr = formatDate(tomorrow);
-            
-            const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
-            
-            const allTasksArray = Object.values(allTasks);
-            
-            // Calcola compiti per domani
+
             const tomorrowTasks = allTasksArray.filter(t => t.dueDate === tomorrowStr);
             const tomorrowCompleted = tomorrowTasks.filter(t => t.completed).length;
             dailyStatsEl.textContent = `${tomorrowCompleted} / ${tomorrowTasks.length}`;
@@ -1495,7 +1629,7 @@
         
         function openModal(modalEl) {
             modalEl.style.display = 'flex';
-            lucide.createIcons({ nodes: [modalEl] });
+            if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [modalEl] });
         }
 
         function closeModal(modalEl) {
@@ -1579,7 +1713,7 @@
                     <span data-lucide="alert-triangle" class="w-12 h-12 mx-auto"></span>
                     <p class="mt-2">${message}</p>
                 </div>`;
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
             console.error(message);
         }
@@ -1618,12 +1752,14 @@
             document.getElementById('openFutureDeadlinesButton').addEventListener('click', () => openModal(futureDeadlinesModalEl));
             document.getElementById('openTimetableButton').addEventListener('click', () => openModal(timetableModalEl));
             document.getElementById('openProgressButton').addEventListener('click', handleOpenProgressModal);
+            document.getElementById('openStudentInfoButton').addEventListener('click', () => openModal(studentInfoModalEl));
 
             taskFormEl.addEventListener('submit', handleSaveTask);
             commitmentsFormEl.addEventListener('submit', handleSaveCommitments);
             futureDeadlineFormEl.addEventListener('submit', handleSaveFutureDeadline);
             aiChatFormEl.addEventListener('submit', handleAiChatSubmit);
             aiPlannerChatFormEl.addEventListener('submit', handleAiPlannerChatSubmit);
+            studentInfoFormEl.addEventListener('submit', handleSaveStudentInfo);
             
             document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
             document.getElementById('confirmOk').addEventListener('click', () => {
@@ -1640,8 +1776,7 @@
 
             initializeFirebase();
             
-            // Correzione: Chiamata iniziale per le icone statiche
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         });
 
     </script>
