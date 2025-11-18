@@ -426,9 +426,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-4">
                     <div>
-                        <h3 class="font-semibold text-md mb-2">Progressi di Oggi</h3>
+                        <!-- MODIFICATO TITOLO -->
+                        <h3 class="font-semibold text-md mb-2">Compiti per Domani</h3>
                         <div class="p-4 bg-gray-50 rounded-lg">
-                            <p class="text-sm text-gray-600">Compiti completati oggi:</p>
+                            <!-- MODIFICATO LABEL -->
+                            <p class="text-sm text-gray-600">Completati (scadenza domani):</p>
                             <p id="dailyStats" class="text-2xl font-bold text-gray-800">0 / 0</p>
                         </div>
                     </div>
@@ -830,13 +832,24 @@
             ).join(', ');
 
             notificationBannerEl.innerHTML = `
-                <div class="max-w-7xl mx-auto p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800">
+                <div class="max-w-7xl mx-auto p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 flex justify-between items-center">
                     <div class="flex items-center gap-3">
                         <span data-lucide="AlertTriangle" class="w-5 h-5"></span>
                         <p class="text-sm">${message}</p>
                     </div>
+                    <button id="closeNotificationBtn" class="p-1 hover:bg-yellow-200 rounded-full">
+                        <span data-lucide="X" class="w-4 h-4"></span>
+                    </button>
                 </div>`;
             notificationBannerEl.style.display = 'block';
+            
+            // Add listener to the close button
+            const closeBtn = document.getElementById('closeNotificationBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    notificationBannerEl.style.display = 'none';
+                });
+            }
             lucide.createIcons();
         }
 
@@ -1057,6 +1070,7 @@
             }
         }
 
+        // CORREZIONE BUG: Funzione per gestire la modifica
         function handleEditTask(id) {
             const task = allTasks[id];
             if (!task) return;
@@ -1382,14 +1396,20 @@
         // --- Funzioni Progressi (Punto 2) ---
         
         function handleOpenProgressModal() {
-            const todayStr = formatDate(new Date());
+            // Modifica: Statistiche per DOMANI
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const tomorrowStr = formatDate(tomorrow);
+            
             const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
             
             const allTasksArray = Object.values(allTasks);
             
-            const todayTasks = allTasksArray.filter(t => t.dueDate === todayStr);
-            const todayCompleted = todayTasks.filter(t => t.completed).length;
-            dailyStatsEl.textContent = `${todayCompleted} / ${todayTasks.length}`;
+            // Calcola compiti per domani
+            const tomorrowTasks = allTasksArray.filter(t => t.dueDate === tomorrowStr);
+            const tomorrowCompleted = tomorrowTasks.filter(t => t.completed).length;
+            dailyStatsEl.textContent = `${tomorrowCompleted} / ${tomorrowTasks.length}`;
             
             const weekTasks = allTasksArray.filter(t => weekDays.includes(t.dueDate));
             const weekCompleted = weekTasks.filter(t => t.completed).length;
