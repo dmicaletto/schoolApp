@@ -15,7 +15,7 @@
     <script>
         const manifest = {
             "name": "Bacheca Compiti",
-            "short_name": "Compiti",
+            "short_name": "My Homework",
             "start_url": window.location.href,
             "display": "standalone",
             "background_color": "#ffffff",
@@ -213,19 +213,21 @@
 
     <div class="flex flex-col h-screen">
 
-        <header class="p-4 bg-white border-b border-gray-200 sticky top-0 z-30">
+        <!-- MODIFICA: Sfondo Header cambiato da bg-white a bg-slate-100 per stacco visivo -->
+        <header class="p-4 bg-slate-100 border-b border-gray-200 sticky top-0 z-30 shadow-sm">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
                 
                 <!-- Titolo e Navigazione Settimana (Sinistra) -->
                 <div class="flex items-center">
-                    <h1 class="text-xl font-bold text-yellow-300 bg-blue-600 px-3 py-1 rounded-lg">Bacheca Compiti</h1>
-                    <div class="flex items-center ml-4">
-                        <button id="prevWeekBtn" class="p-2 rounded-full hover:bg-gray-100">
-                            <span data-lucide="ChevronLeft" class="w-5 h-5 text-gray-600"></span>
+                    <h1 class="text-xl font-bold text-yellow-300 bg-blue-600 px-3 py-1 rounded-lg shadow-md">Bacheca Compiti</h1>
+                    <div class="flex items-center ml-4 gap-2">
+                        <!-- MODIFICA: Bottoni freccia ora hanno sfondo bianco, ombra e bordo -->
+                        <button id="prevWeekBtn" class="p-2 rounded-lg bg-white border border-gray-300 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                            <span data-lucide="ChevronLeft" class="w-5 h-5 text-gray-700"></span>
                         </button>
-                        <span id="currentWeekDisplay" class="text-sm font-medium text-gray-600 w-28 text-center">Caricamento...</span>
-                        <button id="nextWeekBtn" class="p-2 rounded-full hover:bg-gray-100">
-                            <span data-lucide="ChevronRight" class="w-5 h-5 text-gray-600"></span>
+                        <span id="currentWeekDisplay" class="text-sm font-bold text-gray-700 w-28 text-center bg-white py-2 rounded-lg border border-gray-200 shadow-sm">Caricamento...</span>
+                        <button id="nextWeekBtn" class="p-2 rounded-lg bg-white border border-gray-300 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                            <span data-lucide="ChevronRight" class="w-5 h-5 text-gray-700"></span>
                         </button>
                     </div>
                 </div>
@@ -234,7 +236,7 @@
                 <div class="flex items-center gap-2">
                     <!-- Menu Dropdown -->
                     <div class="relative" id="menuContainer">
-                        <button id="menuToggleBtn" class="p-2 rounded-lg hover:bg-gray-100">
+                        <button id="menuToggleBtn" class="p-2 rounded-lg bg-white border border-gray-300 shadow-sm hover:bg-gray-50 transition-colors">
                             <span data-lucide="Menu" class="w-5 h-5 text-gray-700"></span>
                         </button>
                         <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border z-50">
@@ -265,7 +267,7 @@
         </header>
         
         <!-- Banner Notifiche Scadenze -->
-        <div id="notificationBanner" class="hidden sticky top-[65px] z-20">
+        <div id="notificationBanner" class="hidden sticky top-[73px] z-20 shadow-md">
             <!-- Il contenuto verrà generato da JS -->
         </div>
 
@@ -567,7 +569,7 @@
         const app = initializeApp(firebaseConfig);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'school-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+        
         // --- Orario Fisso ---
         const timetable = {
             mon: ["Latino", "Matematica", "Matematica", "Inglese", "Italiano"],
@@ -876,8 +878,10 @@
                     
                 const radarHtml = generateRadarHTML(day.date);
 
+                // MODIFICA: Bordo grigio per giorni non correnti
                 const dayCard = document.createElement('div');
-                dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${dateStr === todayStr ? 'border-2 border-blue-500' : 'border border-transparent'}`;
+                const borderClass = dateStr === todayStr ? 'border-2 border-blue-500' : 'border border-gray-300';
+                dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${borderClass}`;
                 dayCard.id = `day-${dateStr}`;
                 
                 dayCard.innerHTML = `
@@ -1266,8 +1270,9 @@
             const today = new Date();
             const startOfCurrentWeek = getStartOfWeek(currentWeekStart);
             
+            // Finestra estesa per i compiti
             const endOfTaskWindow = new Date(startOfCurrentWeek);
-            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10);
+            endOfTaskWindow.setDate(startOfCurrentWeek.getDate() + 10); // Guarda 10 giorni avanti
 
             const relevantTasks = Object.values(allTasks).filter(task => {
                 const dueDate = new Date(task.dueDate + 'T00:00:00');
