@@ -39,8 +39,8 @@
 
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
 
+    <!-- Librerie Esterne -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Versione UMD corretta per browser -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -280,7 +280,7 @@
             <!-- Il contenuto verrà generato da JS -->
         </div>
         
-        <!-- Area errori globale -->
+        <!-- Area errori globale (inizialmente nascosta) -->
         <div id="globalError" class="hidden max-w-7xl mx-auto p-4 mt-4 bg-red-100 border border-red-400 text-red-700 rounded text-center">
             Si è verificato un errore. <br> <span id="globalErrorMessage"></span>
         </div>
@@ -659,15 +659,13 @@
         
         async function initializeFirebase() {
             try {
-                // Check preventivo libreria Lucide
-                if (typeof lucide === 'undefined') {
-                    throw new Error("Libreria icone non caricata. Controlla la connessione.");
-                }
-
+                // Check preventivo libreria Lucide RIMOSSO per evitare blocchi
+                // Le icone si caricheranno se disponibili
+                
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                setLogLevel('error'); // Meno verboso in console
+                setLogLevel('error'); 
 
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
@@ -708,7 +706,7 @@
             if (!userId) return;
 
             loadingSpinner.style.display = 'none';
-            weekGridEl.classList.remove('hidden'); // Mostra griglia
+            weekGridEl.classList.remove('hidden'); 
 
             setupTimetableModal();
             setupCommitmentsModal();
@@ -745,12 +743,17 @@
             commitmentUnsubscribe = onSnapshot(commitmentDocRef, (docSnap) => {
                 console.log("Dati impegni ricevuti.");
                 localCommitments = docSnap.exists() ? docSnap.data() : {};
+                // Popola il modal
                 for (const dayKey of Object.keys(dayNames)) {
                     const inputEl = document.getElementById(`commitment-${dayKey}`);
                     if (inputEl) {
                         inputEl.value = localCommitments[dayKey] || '';
                     }
                 }
+                // Il renderWeekDisplay verrà chiamato da qui se necessario, 
+                // ma per evitare race conditions, il disegno è sincrono
+                // e si basa su localCommitments.
+                // Chiamiamo il render per aggiornare la vista.
                 renderWeekDisplay(currentWeekStart);
             }, (error) => console.error("Errore listener impegni:", error));
         }
@@ -937,8 +940,87 @@
                 btn.addEventListener('click', (e) => handleDeleteFutureDeadline(e.currentTarget.dataset.id));
             });
             
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+        
+        // --- Funzioni Progressi (Punto 2) ---
+        
+        function handleOpenProgressModal() {
+            // 1. Calcola Statistiche
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const tomorrowStr = formatDate(tomorrow);
+            
+            const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
+            
+            const allTasksArray = Object.values(allTasks);
+            
+            // Statistiche Giornaliere (ora "Per Domani")
+            const tomorrowTasks = allTasksArray.filter(t => t.dueDate === tomorrowStr);
+            const tomorrowCompleted = tomorrowTasks.filter(t => t.completed).length;
+            dailyStatsEl.textContent = `${tomorrowCompleted} / ${tomorrowTasks.length}`;
+            
+            // Statistiche Settimanali
+            const weekTasks = allTasksArray.filter(t => weekDays.includes(t.dueDate));
+            const weekCompleted = weekTasks.filter(t => t.completed).length;
+            weeklyStatsEl.textContent = `${weekCompleted} / ${weekTasks.length}`;
+            
+            // 2. Mostra Premio
+            if (weekTasks.length > 0 && weekCompleted === weekTasks.length) {
+                prizeSectionEl.style.display = 'block';
+            } else {
+                prizeSectionEl.style.display = 'none';
+            }
+            
+            // 3. Renderizza Grafico
+            renderProgressChart(weekCompleted, weekTasks.length - weekCompleted);
+            
+            // 4. Apri Modal
+            openModal(progressModalEl);
+        }
+        
+        function renderProgressChart(completed, pending) {
+            const ctx = progressChartCanvas.getContext('2d');
+            
+            if (progressChartInstance) {
+                progressChartInstance.destroy();
+            }
+            
+            progressChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completati', 'Da Fare'],
+                    datasets: [{
+                        data: [completed, pending],
+                        backgroundColor: [
+                            '#22C55E', // green-500
+                            '#E5E7EB'  // gray-200
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            enabled: true
+                        }
+                    }
+                }
+            });
+        }
+
 
         // --- Funzioni di Rendering UI ---
         
@@ -975,13 +1057,14 @@
                 </div>`;
             notificationBannerEl.style.display = 'block';
             
+            // Add listener to the close button
             const closeBtn = document.getElementById('closeNotificationBtn');
             if (closeBtn) {
                 closeBtn.addEventListener('click', () => {
                     notificationBannerEl.style.display = 'none';
                 });
             }
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function renderWeekDisplay(startDate) {
@@ -991,7 +1074,7 @@
             currentWeekDisplayEl.textContent = formatWeekRange(startDate);
 
             const days = getWeekDays(startDate);
-            const commitments = localCommitments;
+            const commitments = localCommitments; // Usa localCommitments sincrono
             const todayStr = formatDate(new Date());
 
             for (const day of days) {
@@ -999,11 +1082,14 @@
                 const dayKey = day.value.toLowerCase();
                 
                 const timetableHtml = generateTimetableHTML(dayKey);
+                
                 const commitmentHtml = commitments[dayKey] 
                     ? `<p class="text-xs text-gray-800 font-medium break-words">${commitments[dayKey]}</p>` 
                     : '<p class="text-xs text-gray-400 italic">Nessun impegno</p>';
+                    
                 const radarHtml = generateRadarHTML(day.date);
 
+                // MODIFICA: Bordo grigio per giorni non correnti
                 const dayCard = document.createElement('div');
                 const borderClass = dateStr === todayStr ? 'border-2 border-blue-500' : 'border border-gray-300';
                 dayCard.className = `day-column bg-white rounded-xl shadow-sm p-3 flex flex-col ${borderClass}`;
@@ -1052,7 +1138,7 @@
             });
 
             populateTasksForWeek(days);
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function populateTasksForWeek(days) {
@@ -1166,7 +1252,7 @@
             taskEl.appendChild(actionsDiv);
 
             taskListContainer.appendChild(taskEl);
-            lucide.createIcons({ nodes: [taskEl] });
+            if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [taskEl] });
         }
         
         
@@ -1199,6 +1285,7 @@
             }
         }
 
+        // CORREZIONE BUG: Funzione per gestire la modifica
         function handleEditTask(id) {
             const task = allTasks[id];
             if (!task) return;
@@ -1317,6 +1404,7 @@
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
+            // Inietta contesto studente sempre nel system instruction per coerenza
             const studentInfo = localStudentInfo;
             const systemContext = `Agisci come un tutor scolastico amichevole per ${studentInfo.name || 'lo studente'}. Età: ${studentInfo.age || '?'}, Classe: ${studentInfo.classRoom || '?'}. Usa un linguaggio adatto. Basa le tue risposte su informazioni verificate. Formatta sempre le risposte in HTML semplice (paragrafi <p>, liste <ul><li>, grassetto <strong>).`;
 
@@ -1533,81 +1621,6 @@
         function removeAiPlannerChatLoading() {
             const loadingBubble = document.getElementById('ai-planner-loading-bubble');
             if (loadingBubble) loadingBubble.remove();
-        }
-        
-        
-        // --- Funzioni Progressi (Punto 2) ---
-        
-        function handleOpenProgressModal() {
-            const todayStr = formatDate(new Date());
-            const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
-            
-            const allTasksArray = Object.values(allTasks);
-            
-            // Modifica: Statistiche per DOMANI
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            const tomorrowStr = formatDate(tomorrow);
-
-            const tomorrowTasks = allTasksArray.filter(t => t.dueDate === tomorrowStr);
-            const tomorrowCompleted = tomorrowTasks.filter(t => t.completed).length;
-            dailyStatsEl.textContent = `${tomorrowCompleted} / ${tomorrowTasks.length}`;
-            
-            const weekTasks = allTasksArray.filter(t => weekDays.includes(t.dueDate));
-            const weekCompleted = weekTasks.filter(t => t.completed).length;
-            weeklyStatsEl.textContent = `${weekCompleted} / ${weekTasks.length}`;
-            
-            if (weekTasks.length > 0 && weekCompleted === weekTasks.length) {
-                prizeSectionEl.style.display = 'block';
-            } else {
-                prizeSectionEl.style.display = 'none';
-            }
-            
-            renderProgressChart(weekCompleted, weekTasks.length - weekCompleted);
-            
-            openModal(progressModalEl);
-        }
-        
-        function renderProgressChart(completed, pending) {
-            const ctx = progressChartCanvas.getContext('2d');
-            
-            if (progressChartInstance) {
-                progressChartInstance.destroy();
-            }
-            
-            progressChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Completati', 'Da Fare'],
-                    datasets: [{
-                        data: [completed, pending],
-                        backgroundColor: [
-                            '#22C55E', // green-500
-                            '#E5E7EB'  // gray-200
-                        ],
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            enabled: true
-                        }
-                    }
-                }
-            });
         }
 
 
