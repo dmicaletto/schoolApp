@@ -40,7 +40,7 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- CORREZIONE: Link specifico alla versione UMD di Lucide per compatibilità browser -->
+    <!-- Versione UMD stabile -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -227,11 +227,11 @@
                     <div class="flex items-center ml-4 gap-2">
                         <!-- Bottoni freccia con sfondo bianco, ombra e bordo -->
                         <button id="prevWeekBtn" class="p-2 rounded-lg bg-white border border-gray-300 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
-                            <span data-lucide="ChevronLeft" class="w-5 h-5 text-gray-700"></span>
+                            <span data-lucide="chevron-left" class="w-5 h-5 text-gray-700"></span>
                         </button>
                         <span id="currentWeekDisplay" class="text-sm font-bold text-gray-700 w-28 text-center bg-white py-2 rounded-lg border border-gray-200 shadow-sm">Caricamento...</span>
                         <button id="nextWeekBtn" class="p-2 rounded-lg bg-white border border-gray-300 shadow-sm hover:bg-gray-50 active:bg-gray-100 transition-colors">
-                            <span data-lucide="ChevronRight" class="w-5 h-5 text-gray-700"></span>
+                            <span data-lucide="chevron-right" class="w-5 h-5 text-gray-700"></span>
                         </button>
                     </div>
                 </div>
@@ -241,27 +241,27 @@
                     <!-- Menu Dropdown -->
                     <div class="relative" id="menuContainer">
                         <button id="menuToggleBtn" class="p-2 rounded-lg bg-white border border-gray-300 shadow-sm hover:bg-gray-50 transition-colors">
-                            <span data-lucide="Menu" class="w-5 h-5 text-gray-700"></span>
+                            <span data-lucide="menu" class="w-5 h-5 text-gray-700"></span>
                         </button>
                         <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border z-50">
                             <a id="openAiPlannerButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="BrainCircuit" class="w-5 h-5 text-purple-600"></span>
+                                <span data-lucide="brain-circuit" class="w-5 h-5 text-purple-600"></span>
                                 AI Planner
                             </a>
                             <a id="openCommitmentsButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="CalendarClock" class="w-5 h-5 text-green-600"></span>
+                                <span data-lucide="calendar-clock" class="w-5 h-5 text-green-600"></span>
                                 Impegni
                             </a>
                             <a id="openFutureDeadlinesButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="Target" class="w-5 h-5 text-red-600"></span>
+                                <span data-lucide="target" class="w-5 h-5 text-red-600"></span>
                                 Scadenze Future
                             </a>
                             <a id="openTimetableButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                <span data-lucide="BookOpen" class="w-5 h-5 text-blue-600"></span>
+                                <span data-lucide="book-open" class="w-5 h-5 text-blue-600"></span>
                                 Orario
                             </a>
                             <a id="openProgressButton" href="#" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-t">
-                                <span data-lucide="PieChart" class="w-5 h-5 text-yellow-600"></span>
+                                <span data-lucide="pie-chart" class="w-5 h-5 text-yellow-600"></span>
                                 Progressi
                             </a>
                         </div>
@@ -277,7 +277,7 @@
 
         <!-- Spinner di caricamento principale -->
         <div id="loadingSpinner" class="flex items-center justify-center h-full">
-            <span data-lucide="Loader" class="w-12 h-12 text-blue-500 animate-spin"></span>
+            <span data-lucide="loader" class="w-12 h-12 text-blue-500 animate-spin"></span>
         </div>
 
         <!-- 2. Bacheca Settimanale (Contenuto) -->
@@ -345,7 +345,7 @@
     <div id="aiAssistantModal" class="modal">
         <div class="modal-content">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span data-lucide="Sparkles" class="w-5 h-5 text-blue-500"></span>
+                <span data-lucide="sparkles" class="w-5 h-5 text-blue-500"></span>
                 Assistente AI
             </h2>
             <div id="aiChatHistory" class="chat-container p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4 flex flex-col gap-3">
@@ -353,7 +353,7 @@
             <form id="aiChatForm" class="flex gap-2">
                 <input type="text" id="aiChatInput" placeholder="Fai una domanda..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                 <button type="submit" id="aiChatSendButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center justify-center">
-                    <span data-lucide="Send" class="w-5 h-5"></span>
+                    <span data-lucide="send" class="w-5 h-5"></span>
                 </button>
             </form>
             <div class="flex justify-end mt-4">
@@ -366,7 +366,7 @@
     <div id="aiPlannerModal" class="modal">
          <div class="modal-content max-w-2xl">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span data-lucide="BrainCircuit" class="w-5 h-5 text-purple-600"></span>
+                <span data-lucide="brain-circuit" class="w-5 h-5 text-purple-600"></span>
                 Piano di Studio AI (Chat)
             </h2>
             <div id="aiPlannerChatHistory" class="chat-container p-3 bg-gray-50 border border-gray-200 rounded-lg mb-4 flex flex-col gap-3">
@@ -374,7 +374,7 @@
             <form id="aiPlannerChatForm" class="flex gap-2">
                 <input type="text" id="aiPlannerChatInput" placeholder="Modifica il piano..." class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                 <button type="submit" id="aiPlannerChatSendButton" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition flex items-center justify-center">
-                    <span data-lucide="Send" class="w-5 h-5"></span>
+                    <span data-lucide="send" class="w-5 h-5"></span>
                 </button>
             </form>
              <div class="flex justify-end mt-4">
@@ -425,7 +425,7 @@
     <div id="progressModal" class="modal">
         <div class="modal-content">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span data-lucide="PieChart" class="w-5 h-5 text-yellow-600"></span>
+                <span data-lucide="pie-chart" class="w-5 h-5 text-yellow-600"></span>
                 Progressi e Statistiche
             </h2>
             
@@ -458,7 +458,7 @@
             </div>
             
             <div id="prizeSection" class="mt-6">
-                <span data-lucide="Trophy" class="w-12 h-12 text-yellow-500 mx-auto"></span>
+                <span data-lucide="trophy" class="w-12 h-12 text-yellow-500 mx-auto"></span>
                 <h3 class="text-xl font-bold text-yellow-800 mt-2">Settimana Completata!</h3>
                 <p class="text-yellow-700">Ottimo lavoro, hai finito tutti i compiti!</p>
             </div>
@@ -801,7 +801,7 @@
                         <p class="text-xs text-gray-600">${new Date(deadline.date + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     </div>
                     <button data-id="${deadline.id}" class="delete-deadline-btn p-1 rounded-full hover:bg-red-100">
-                        <span data-lucide="Trash2" class="w-4 h-4 text-red-500"></span>
+                        <span data-lucide="trash-2" class="w-4 h-4 text-red-500"></span>
                     </button>
                 `;
                 futureDeadlinesListEl.appendChild(li);
@@ -840,11 +840,11 @@
             notificationBannerEl.innerHTML = `
                 <div class="max-w-7xl mx-auto p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 flex justify-between items-center">
                     <div class="flex items-center gap-3">
-                        <span data-lucide="AlertTriangle" class="w-5 h-5"></span>
+                        <span data-lucide="alert-triangle" class="w-5 h-5"></span>
                         <p class="text-sm">${message}</p>
                     </div>
                     <button id="closeNotificationBtn" class="p-1 hover:bg-yellow-200 rounded-full">
-                        <span data-lucide="X" class="w-4 h-4"></span>
+                        <span data-lucide="x" class="w-4 h-4"></span>
                     </button>
                 </div>`;
             notificationBannerEl.style.display = 'block';
@@ -1029,12 +1029,12 @@
             
             const aiButton = document.createElement('button');
             aiButton.className = 'p-1 rounded-full hover:bg-blue-100';
-            aiButton.innerHTML = `<span data-lucide="Sparkles" class="w-4 h-4 text-blue-500"></span>`;
+            aiButton.innerHTML = `<span data-lucide="sparkles" class="w-4 h-4 text-blue-500"></span>`;
             aiButton.addEventListener('click', () => handleOpenAiAssistant(id));
             
             const deleteButton = document.createElement('button');
             deleteButton.className = 'p-1 rounded-full hover:bg-red-100';
-            deleteButton.innerHTML = `<span data-lucide="Trash2" class="w-4 h-4 text-red-500"></span>`;
+            deleteButton.innerHTML = `<span data-lucide="trash-2" class="w-4 h-4 text-red-500"></span>`;
             deleteButton.addEventListener('click', () => handleDeleteTask(id));
 
             actionsDiv.appendChild(aiButton);
@@ -1576,7 +1576,7 @@
         function showError(message) {
             if(loadingSpinner.style.display !== 'none') {
                 loadingSpinner.innerHTML = `<div class="text-center text-red-600">
-                    <span data-lucide="AlertTriangle" class="w-12 h-12 mx-auto"></span>
+                    <span data-lucide="alert-triangle" class="w-12 h-12 mx-auto"></span>
                     <p class="mt-2">${message}</p>
                 </div>`;
                 lucide.createIcons();
