@@ -10,38 +10,11 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Compiti">
     <meta name="theme-color" content="#3B82F6">
-
-    <!-- Script per generare il MANIFEST.JSON dinamicamente (per Android/PWA) -->
-    <script>
-        const manifest = {
-            "name": "Bacheca Compiti",
-            "short_name": "My Homework",
-            "start_url": window.location.href,
-            "display": "standalone",
-            "background_color": "#ffffff",
-            "theme_color": "#3B82F6",
-            "icons": [
-                {
-                    "src": "https://cdn-icons-png.flaticon.com/512/3238/3238016.png",
-                    "sizes": "512x512",
-                    "type": "image/png"
-                }
-            ]
-        };
-        const stringManifest = JSON.stringify(manifest);
-        const blob = new Blob([stringManifest], {type: 'application/json'});
-        const manifestURL = URL.createObjectURL(blob);
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = manifestURL;
-        document.head.appendChild(link);
-    </script>
      
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
 
     <!-- Librerie Esterne -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
