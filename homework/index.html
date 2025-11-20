@@ -2,20 +2,15 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport ottimizzato per iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bacheca Compiti Settimana</title>
 
-    <!-- Meta tags per iOS (PWA) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Compiti">
     <meta name="theme-color" content="#3B82F6">
-
-    <!-- Icona -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
-     
-    <!-- Librerie Esterne (Versioni Fisse) -->
+
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -23,166 +18,40 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            overscroll-behavior-x: none;
-            background-color: #f9fafb;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* FIX TASTIERA IPHONE */
-        input, textarea, select {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
-
-        /* --- NUOVO SFONDO DIARIO --- */
-        .diary-pattern {
-            background-color: #fffdf5; /* Color crema/carta */
-            /* Righe del quaderno (azzurrine) */
-            background-image: linear-gradient(#e2e8f0 1px, transparent 1px);
-            background-size: 100% 2rem; /* Spaziatura righe */
-            position: relative;
-        }
-        /* Linea rossa del margine */
-        .diary-pattern::before {
-            content: '';
-            position: absolute;
-            top: 0; bottom: 0; left: 2rem; /* Posizione margine */
-            width: 2px;
-            background-color: #fecaca; /* Rosso chiaro */
-            z-index: 0;
-        }
-        
-        .week-scroll-container {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            gap: 0.75rem;
-            padding-bottom: 20px;
-            position: relative;
-            z-index: 1; /* Assicura che le card siano sopra la linea rossa */
-        }
-
-        .day-column {
-            flex: 0 0 100%;
-            scroll-snap-align: start;
-        }
-
-        @media (min-width: 640px) {
-            .day-column { flex: 1 1 0%; }
-        }
-        
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 50;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 24px;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            max-height: 85vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .confirm-modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 24px;
-            border-radius: 16px;
-            width: 85%;
-            max-width: 320px;
-            text-align: center;
-        }
-        
-        /* Chat UI */
-        .chat-container {
-            height: 350px;
-            overflow-y: auto;
-            padding: 12px;
-            background-color: #f9fafb;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            -webkit-overflow-scrolling: touch;
-        }
-        .chat-bubble {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-        .chat-bubble-user {
-            background-color: #3B82F6;
-            color: white;
-            align-self: flex-end;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
-        }
-        .chat-bubble-model {
-            background-color: #E5E7EB;
-            color: #1F2937;
-            align-self: flex-start;
-            margin-right: auto;
-            border-bottom-left-radius: 4px;
-        }
-        .chat-bubble-model.planner {
-            background-color: #F3E8FF;
-            color: #3730A3;
-        }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior-x: none; background-color: #f9fafb; -webkit-tap-highlight-color: transparent; }
+        input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
+        .diary-pattern { background-color: #fffdf5; background-image: linear-gradient(#e2e8f0 1px, transparent 1px); background-size: 100% 2rem; position: relative; }
+        .diary-pattern::before { content: ''; position: absolute; top: 0; bottom: 0; left: 2rem; width: 2px; background-color: #fecaca; z-index: 0; pointer-events: none; }
+        .week-scroll-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; gap: 0.75rem; padding-bottom: 20px; position: relative; z-index: 1; }
+        .day-column { flex: 0 0 100%; scroll-snap-align: start; }
+        @media (min-width: 640px) { .day-column { flex: 1 1 0%; } }
+        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 24px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .confirm-modal-content { background-color: #fefefe; margin: auto; padding: 24px; border-radius: 16px; width: 85%; max-width: 320px; text-align: center; }
+        .chat-container { height: 350px; overflow-y: auto; padding: 12px; background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; -webkit-overflow-scrolling: touch; }
+        .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; }
+        .chat-bubble-user { background-color: #3B82F6; color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 4px; }
+        .chat-bubble-model { background-color: #E5E7EB; color: #1F2937; align-self: flex-start; margin-right: auto; border-bottom-left-radius: 4px; }
+        .chat-bubble-model.planner { background-color: #F3E8FF; color: #3730A3; }
         .loading-bubble { display: flex; gap: 4px; align-items: center; padding: 4px 8px; }
-        .loading-dot {
-            width: 6px; height: 6px; border-radius: 50%; animation: pulse 1s infinite;
-        }
+        .loading-dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 1s infinite; }
         .loading-dot:nth-child(2) { animation-delay: 0.2s; }
         .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        /* Table */
-        #timetableModalTable {
-            display: block;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            white-space: nowrap;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
+        #timetableModalTable { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; border-radius: 8px; border: 1px solid #e5e7eb; }
         #timetableModalTable table { width: 100%; min-width: 600px; border-collapse: collapse; }
-        #timetableModalTable th, #timetableModalTable td {
-            border: 1px solid #E5E7EB; padding: 10px; text-align: left; font-size: 0.875rem;
-        }
+        #timetableModalTable th, #timetableModalTable td { border: 1px solid #E5E7EB; padding: 10px; text-align: left; font-size: 0.875rem; }
         #timetableModalTable th { background-color: #F9FAFB; }
         #timetableModalTable tbody tr:nth-child(odd) { background-color: #F9FAFB; }
-        
-        /* Prize */
-        #prizeSection {
-            display: none; text-align: center; padding: 20px;
-            background: linear-gradient(145deg, #fef9c3, #fafad2);
-            border: 2px dashed #facc15; border-radius: 12px; margin-top: 20px;
-        }
+        #prizeSection { display: none; text-align: center; padding: 20px; background: linear-gradient(145deg, #fef9c3, #fafad2); border: 2px dashed #facc15; border-radius: 12px; position: relative; overflow: hidden; margin-top: 20px; }
+        #prizeSection::before { content: '🎉'; position: absolute; top: -10px; left: 10px; font-size: 24px; animation: confetti 1.5s infinite; }
+        #prizeSection::after { content: '✨'; position: absolute; bottom: -5px; right: 15px; font-size: 20px; animation: confetti 1.7s infinite 0.3s; }
+        @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-50px) rotate(360deg); opacity: 0; } }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 h-full">
 
     <div class="flex flex-col h-full">
-
         <header class="p-4 bg-slate-100 border-b border-gray-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
                 <div class="flex items-center">
@@ -210,10 +79,8 @@
         </header>
         
         <div id="notificationBanner" class="hidden sticky top-[73px] z-20 shadow-md bg-yellow-100 border-b border-yellow-200"></div>
-
         <div id="loadingSpinner" class="flex items-center justify-center h-full flex-1"><div class="text-center"><span data-lucide="loader" class="w-12 h-12 text-blue-500 animate-spin mx-auto"></span><p class="mt-2 text-gray-500">Caricamento...</p></div></div>
         
-        <!-- Main con sfondo diario -->
         <main id="weekGrid" class="hidden flex-1 overflow-hidden p-3 sm:p-4 diary-pattern"><div id="weekScrollContainer" class="week-scroll-container h-full"></div></main>
     </div>
 
@@ -256,10 +123,9 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         const timetable = { mon: ["Latino", "Matematica", "Matematica", "Inglese", "Italiano"], tue: ["Italiano", "Motoria", "Matematica", "Matematica", "Italiano", "Scienze"], wed: ["Inglese", "Latino", "Italiano", "Arte", "Matematica"], thu: ["Scienze", "Italiano", "Italiano", "Religione", "Matematica", "Arte"], fri: ["Latino", "Matematica", "Italiano", "Inglese", "Motoria"] };
-        const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì' };
+        const dayNames = { mon: 'Lunedì', tue: 'Martedì', wed: 'Mercoledì', thu: 'Giovedì', fri: 'Venerdì', sat: 'Sabato', sun: 'Domenica' };
         const hourSlots = ["8:00", "9:00", "10:00", "11:00", "12:00", "13:00"];
 
-        // --- UTILITÀ DATE CORRETTE (FIX BUG FUSO ORARIO) ---
         function formatDate(date) {
             const d = new Date(date);
             const year = d.getFullYear();
@@ -279,7 +145,7 @@
         function getWeekDays(startDate) {
             const days = [];
             const d = new Date(startDate);
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 7; i++) {
                 days.push({
                     name: Object.values(dayNames)[i],
                     date: new Date(d),
@@ -292,7 +158,7 @@
         
         function formatWeekRange(startDate) {
             const endDate = new Date(startDate);
-            endDate.setDate(startDate.getDate() + 4);
+            endDate.setDate(startDate.getDate() + 6);
             return `${startDate.getDate()}/${startDate.getMonth()+1} - ${endDate.getDate()}/${endDate.getMonth()+1}`;
         }
         
@@ -302,7 +168,6 @@
             return ['sun','mon','tue','wed','thu','fri','sat'][date.getDay()];
         }
 
-        // --- INIT FIREBASE ---
         async function initializeFirebase() {
             try {
                 const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); setLogLevel('error');
@@ -322,7 +187,6 @@
             renderWeekDisplay(currentWeekStart);
         }
 
-        // --- LISTENERS ---
         function attachTaskListener() {
             if (taskUnsubscribe) taskUnsubscribe();
             taskUnsubscribe = onSnapshot(collection(db, "artifacts", appId, "users", userId, "tasks"), (snap) => {
@@ -359,7 +223,6 @@
             });
         }
 
-        // --- RENDERERS ---
         function renderWeekDisplay(startDate) {
             const cont = document.getElementById('weekScrollContainer');
             if (!cont || !userId) return;
@@ -372,23 +235,31 @@
                 const dateStr = formatDate(day.date);
                 const dayKey = day.value;
                 const isToday = dateStr === todayStr;
+                const isWeekend = dayKey === 'sat' || dayKey === 'sun';
                 
                 const div = document.createElement('div');
                 div.className = `day-column bg-white rounded-2xl shadow-sm p-4 flex flex-col border ${isToday ? 'border-2 border-blue-500' : 'border-gray-200'}`;
                 div.id = `day-${dateStr}`;
                 
+                const addTaskButton = isWeekend ? '' : `<button class="add-task-btn p-1.5 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition" data-date="${dateStr}" data-daykey="${dayKey}"><span data-lucide="plus" class="w-5 h-5"></span></button>`;
+                const timeHtml = isWeekend ? '-' : generateTimetableHTML(dayKey);
+
                 div.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-lg font-bold ${isToday ? 'text-blue-700' : 'text-gray-800'}">${day.name}</h2>
                         <span class="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">${day.date.getDate()}</span>
                     </div>
                     <div class="radar-container mb-3 space-y-1">${generateRadarHTML(day.date)}</div>
-                    <div class="mb-3"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Orario</div><div class="bg-gray-50 p-2 rounded-lg text-xs text-gray-700 leading-relaxed">${generateTimetableHTML(dayKey)}</div></div>
+                    <div class="mb-3"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Orario</div><div class="bg-gray-50 p-2 rounded-lg text-xs text-gray-700 leading-relaxed">${timeHtml}</div></div>
                     <div class="mb-3"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Impegni</div><div class="bg-green-50 p-2 rounded-lg text-xs text-green-800 font-medium">${localCommitments[dayKey] || 'Nessuno'}</div></div>
                     <hr class="border-gray-100 my-2">
-                    <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-gray-700">Compiti</h3><button class="add-task-btn p-1.5 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition" data-date="${dateStr}" data-daykey="${dayKey}"><span data-lucide="plus" class="w-5 h-5"></span></button></div>
+                    <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-gray-700">Compiti</h3>${addTaskButton}</div>
                     <div id="task-list-${dateStr}" class="flex-1 space-y-2 overflow-y-auto"></div>`;
                 cont.appendChild(div);
+                
+                if(isToday) {
+                     setTimeout(() => div.scrollIntoView({behavior: 'smooth', inline: 'center', block: 'nearest'}), 500);
+                }
             });
 
             cont.querySelectorAll('.add-task-btn').forEach(b => b.addEventListener('click', (e) => openModalNewTask(e.currentTarget.dataset.date, e.currentTarget.dataset.daykey)));
@@ -464,10 +335,10 @@
         function setupTimetableModal() {
             const t = document.getElementById('timetableModalTable');
             let h = '<table><thead><tr><th>Ora</th>';
-            Object.values(dayNames).forEach(n => h += `<th>${n}</th>`); h += '</tr></thead><tbody>';
+            Object.values(dayNames).slice(0,5).forEach(n => h += `<th>${n}</th>`); h += '</tr></thead><tbody>';
             hourSlots.forEach((hr, i) => {
                 h += `<tr><td><strong>${hr}</strong></td>`;
-                Object.keys(dayNames).forEach(k => h += `<td>${timetable[k][i] || '---'}</td>`);
+                ['mon','tue','wed','thu','fri'].forEach(k => h += `<td>${timetable[k][i] || '---'}</td>`);
                 h += '</tr>';
             });
             t.innerHTML = h + '</tbody></table>';
@@ -480,7 +351,6 @@
         }
         function populateSubjectDropdown(k) { const s=document.getElementById('subject'); s.innerHTML='<option value="">Scegli...</option>'; [...new Set(timetable[k]||[])].forEach(v=>s.add(new Option(v,v))); }
 
-        // ACTIONS
         async function handleSaveTask(e) {
             e.preventDefault(); if (!userId) return;
             const id = document.getElementById('taskId').value;
@@ -516,7 +386,6 @@
             closeModal(document.getElementById('studentInfoModal'));
         }
 
-        // AI & UI Handlers
         function openModalNewTask(d, k) {
             document.getElementById('taskForm').reset(); document.getElementById('taskId').value=''; document.getElementById('dueDate').value=d; populateSubjectDropdown(k); document.getElementById('modalTitle').innerText="Nuovo"; openModal(document.getElementById('taskModal'));
         }
@@ -525,23 +394,16 @@
         function showConfirm(m, cb) { document.getElementById('confirmMessage').innerText=m; confirmCallback=cb; openModal(document.getElementById('confirmModal')); }
         function closeConfirm() { closeModal(document.getElementById('confirmModal')); confirmCallback=null; }
 
-        // Progress Logic with Fixed Date
         function handleOpenProgressModal() {
-            const today = new Date(); 
-            const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1); 
-            const tomStr = formatDate(tomorrow); // Uses local time fix
-            
+            const today = new Date(); const tom = new Date(today); tom.setDate(today.getDate()+1); const tomStr = formatDate(tom);
             const weekDays = getWeekDays(currentWeekStart).map(d => formatDate(d.date));
             const arr = Object.values(allTasks);
-            
             const tTasks = arr.filter(t => t.dueDate === tomStr);
             const tDone = tTasks.filter(t => t.completed).length;
             document.getElementById('dailyStats').innerText = `${tDone} / ${tTasks.length}`;
-            
             const wTasks = arr.filter(t => weekDays.includes(t.dueDate));
             const wDone = wTasks.filter(t => t.completed).length;
             document.getElementById('weeklyStats').innerText = `${wDone} / ${wTasks.length}`;
-            
             const ctx = document.getElementById('progressChart');
             if(progressChartInstance) progressChartInstance.destroy();
             progressChartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Fatti', 'Da Fare'], datasets: [{ data: [wDone, wTasks.length-wDone], backgroundColor: ['#22C55E', '#E5E7EB'], borderWidth: 0 }] }, options: { cutout: '70%', plugins: { legend: { display: false } } } });
@@ -549,7 +411,6 @@
             openModal(document.getElementById('progressModal'));
         }
 
-        // AI Callbacks
         async function handleOpenAiAssistant(id) {
             const t = allTasks[id]; if (!t) return;
             currentAiTaskId = id; currentAiChatHistory = t.aiChatHistory || [];
@@ -573,13 +434,51 @@
             const c = document.getElementById('aiChatHistory'); c.appendChild(b); c.scrollTop = c.scrollHeight;
         }
         function removeAiChatLoading() { const l = document.getElementById('ai-loading-bubble'); if(l) l.remove(); }
+
         async function handleOpenAiPlanner() {
             openModal(document.getElementById('aiPlannerModal'));
             const el = document.getElementById('aiPlannerChatHistory'); el.innerHTML = ''; currentAiPlannerChatHistory = [];
             renderAiPlannerChatMessage("model", "...", true);
-            const today = new Date(); const start = getStartOfWeek(currentWeekStart); const end = new Date(start); end.setDate(start.getDate()+10);
-            const tasks = Object.values(allTasks).filter(t => { const d = new Date(t.dueDate+'T00:00:00'); return !t.completed && d >= today && d <= end; });
-            const prompt = `Tutor ${localStudentInfo.name||''} (${localStudentInfo.classRoom||''}). Piano oggi->venerdì. Orario: ${JSON.stringify(timetable)}. Impegni: ${JSON.stringify(localCommitments)}. Scadenze: ${JSON.stringify(allFutureDeadlines)}. Compiti: ${JSON.stringify(tasks)}. Usa HTML semplice.`;
+            
+            const today = new Date();
+            // Giorni rimanenti nella settimana corrente (0=Dom, 1=Lun, ..., 6=Sab)
+            // Se oggi è Giovedì (4), rimangono Giovedì (4), Venerdì (5). Sabato (6) e Domenica (0) sono extra.
+            // Calcoliamo i giorni da mostrare nel piano.
+            const dayIndex = today.getDay(); // 0-6
+            // Mapping per visualizzazione in Italiano
+            const daysMap = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+            const todayName = daysMap[dayIndex];
+            
+            // Costruiamo una lista esplicita dei giorni validi per il piano (da oggi a venerdì/sabato/domenica)
+            let validDays = [];
+            // Se è Lun-Ven
+            if (dayIndex >= 1 && dayIndex <= 5) {
+                validDays = daysMap.slice(dayIndex, 6); // Fino a Venerdì incluso
+            } else {
+                // Se è Sabato o Domenica, pianifichiamo per la prox settimana o solo il weekend?
+                // Assumiamo focus sulla settimana corrente scolastica, quindi se è Sab/Dom magari pianifica per Lunedì prossimo o ripasso weekend.
+                // Per ora manteniamo focus "da oggi in poi".
+                validDays = [todayName]; 
+            }
+            
+            const tasks = Object.values(allTasks).filter(t => !t.completed);
+            const prompt = `Sei un Tutor di Pianificazione.
+            Oggi è ${today.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}.
+            
+            IMPORTANTE: I giorni passati della settimana NON esistono più. 
+            Pianifica lo studio SOLO per questi giorni: ${validDays.join(', ')}.
+            
+            Dati:
+            - Studente: ${localStudentInfo.name||''} (${localStudentInfo.classRoom||''})
+            - Orario Scolastico: ${JSON.stringify(timetable)}
+            - Impegni Fissi (da rispettare): ${JSON.stringify(localCommitments)}
+            - Scadenze Future (da preparare): ${JSON.stringify(allFutureDeadlines)}
+            - Compiti da fare: ${JSON.stringify(tasks.map(t=>({materia:t.subject, descrizione:t.description, scadenza:t.dueDate})))}
+            
+            REGOLA SCADENZE: Un compito con scadenza X va fatto entro il giorno X-1. Mai il giorno stesso.
+            
+            Genera un piano orario dettagliato e fattibile. Usa HTML semplice (<h3>, <ul>, <li>, <strong>).`;
+            
             currentAiPlannerChatHistory.push({ role: "user", parts: [{ text: prompt }] });
             callGeminiPlannerChatApi();
         }
@@ -589,7 +488,7 @@
         }
         async function callGeminiPlannerChatApi() {
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE"; 
-            try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: currentAiPlannerChatHistory, systemInstruction: {parts:[{text:"Sei un tutor pianificatore."}]} }) }); const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.[0]?.text; removeAiPlannerChatLoading(); if(txt) { renderAiPlannerChatMessage("model", txt); currentAiPlannerChatHistory.push({ role: "model", parts: [{ text: txt }] }); } } catch(e) { removeAiPlannerChatLoading(); renderAiPlannerChatMessage("model", "Errore."); }
+            try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: currentAiPlannerChatHistory, systemInstruction: {parts:[{text:"Sei un tutor pianificatore. Rispondi SOLO per i giorni futuri a partire da oggi."}]} }) }); const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.[0]?.text; removeAiPlannerChatLoading(); if(txt) { renderAiPlannerChatMessage("model", txt); currentAiPlannerChatHistory.push({ role: "model", parts: [{ text: txt }] }); } } catch(e) { removeAiPlannerChatLoading(); renderAiPlannerChatMessage("model", "Errore."); }
         }
         function renderAiPlannerChatMessage(role, text, load=false) {
             const b = document.createElement('div'); b.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model planner'}`;
@@ -628,6 +527,7 @@
             initializeFirebase();
             if(typeof lucide!=='undefined') lucide.createIcons();
         });
+
     </script>
 </body>
 </html>
