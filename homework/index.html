@@ -15,7 +15,7 @@
     <!-- Icona -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
      
-    <!-- Librerie Esterne (Versioni Fisse come richiesto) -->
+    <!-- Librerie Esterne (Versioni Fisse) -->
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -247,29 +247,22 @@
     <div id="timetableModal" class="modal"><div class="modal-content max-w-3xl"><h2 class="text-xl font-bold mb-4 text-gray-800">Orario Settimanale</h2><div id="timetableModalTable" class="rounded-lg border border-gray-200 overflow-hidden"></div><div class="flex justify-end mt-6"><button type="button" class="close-modal-btn px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">Chiudi</button></div></div></div>
     <div id="confirmModal" class="modal" style="z-index: 60;"><div class="confirm-modal-content"><h3 id="confirmTitle" class="text-lg font-bold mb-2 text-gray-900">Sei sicuro?</h3><p id="confirmMessage" class="text-sm text-gray-600 mb-6">Vuoi davvero eliminare questo elemento?</p><div class="flex justify-center gap-3"><button id="confirmCancel" class="px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl flex-1">No</button><button id="confirmOk" class="px-4 py-2.5 bg-red-600 text-white font-medium rounded-xl shadow flex-1">Sì, elimina</button></div></div></div>
     
-    <!-- AI Assistant Modal CON CAMERA -->
+    <!-- AI Assistant Modal -->
     <div id="aiAssistantModal" class="modal"><div class="modal-content flex flex-col h-[80vh]">
         <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-blue-600 border-b pb-2"><span data-lucide="sparkles" class="w-5 h-5 text-blue-500"></span> Assistente AI</h2>
         <div id="aiChatHistory" class="chat-container flex-1 mb-3"></div>
-        
-        <!-- Anteprima Immagine -->
+        <!-- Preview Immagine -->
         <div id="aiChatImagePreviewWrapper" class="hidden px-2 mb-2">
              <div class="image-preview-container">
                  <img id="aiChatImagePreview" src="" alt="Anteprima">
                  <div id="aiChatRemoveImage" class="remove-image-btn">X</div>
              </div>
         </div>
-
         <form id="aiChatForm" class="flex gap-2 mt-auto items-end">
-            <button type="button" id="aiChatCameraBtn" class="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 active:bg-gray-300 shadow-sm flex-shrink-0">
-                <span data-lucide="camera" class="w-5 h-5"></span>
-            </button>
+            <button type="button" id="aiChatCameraBtn" class="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 active:bg-gray-300 shadow-sm flex-shrink-0"><span data-lucide="camera" class="w-5 h-5"></span></button>
             <input type="file" id="aiChatFileInput" accept="image/*" capture="environment" class="hidden">
-            
             <input type="text" id="aiChatInput" placeholder="Chiedi..." class="flex-1 px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:border-blue-500 text-base" required>
-            <button type="submit" id="aiChatSendButton" class="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow transition flex items-center justify-center flex-shrink-0">
-                <span data-lucide="send" class="w-5 h-5"></span>
-            </button>
+            <button type="submit" id="aiChatSendButton" class="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow transition flex-shrink-0"><span data-lucide="send" class="w-5 h-5"></span></button>
         </form>
         <div class="flex justify-end mt-3"><button type="button" class="close-modal-btn text-sm text-gray-500 hover:text-gray-800 px-2 py-1">Chiudi</button></div>
     </div></div>
@@ -290,7 +283,7 @@
         let allTasks = {}, allFutureDeadlines = [], localCommitments = {}, localStudentInfo = {};
         let taskUnsubscribe, commitmentUnsubscribe, futureDeadlinesUnsubscribe, studentInfoUnsubscribe;
         let currentAiChatHistory = [], currentAiTaskId = null, currentAiPlannerChatHistory = [], confirmCallback = null, progressChartInstance = null;
-        let currentImageBase64 = null; // Per immagine fotocamera
+        let currentImageBase64 = null;
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -604,8 +597,23 @@
             currentAiTaskId = id; currentAiChatHistory = t.aiChatHistory || [];
             const el = document.getElementById('aiChatHistory'); el.innerHTML = '';
             openModal(document.getElementById('aiAssistantModal'));
-            if (currentAiChatHistory.length > 0) currentAiChatHistory.forEach(m => renderAiChatMessage(m.role, m.parts[0].text));
-            else { renderAiChatMessage("model", "...", true); callGeminiChatApi(true); }
+            if (currentAiChatHistory.length > 0) {
+                currentAiChatHistory.forEach(m => renderAiChatMessage(m.role, m.parts[0].text));
+            } else {
+                renderAiChatMessage("model", "...", true);
+                const prompt = `Agisci come un tutor scolastico amichevole e incoraggiante. Ho questo compito:
+                - Materia: ${t.subject}
+                - Descrizione: ${t.description}
+                Basandoti su informazioni aggiornate (usa la ricerca Google), dammi una brevissima spiegazione (massimo 2 frasi) dell'argomento principale e 3 consigli pratici e concisi per svolgerlo al meglio. Formatta la risposta in HTML semplice (paragrafi e liste).`;
+                
+                // Salva il prompt iniziale nella cronologia come messaggio utente (invisibile) o visibile se preferisci
+                // Per coerenza con l'interfaccia chat, lo aggiungiamo alla history ma non lo renderizziamo necessariamente se vogliamo che sembri che l'AI inizi.
+                // Ma per la persistence e per inviarlo a Gemini, DEVE essere nella history.
+                const initialMessage = { role: "user", parts: [{ text: prompt }] };
+                currentAiChatHistory.push(initialMessage);
+                
+                callGeminiChatApi(true);
+            }
         }
         
         // Camera Logic
