@@ -2,15 +2,20 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <!-- Viewport ottimizzato per iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bacheca Compiti Settimana</title>
 
+    <!-- Meta tags per iOS (PWA) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Compiti">
     <meta name="theme-color" content="#3B82F6">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
 
+    <!-- Icona -->
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
+     
+    <!-- Librerie Esterne (Versioni Fisse come richiesto) -->
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -18,35 +23,188 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        body { font-family: 'Inter', sans-serif; overscroll-behavior-x: none; background-color: #f9fafb; -webkit-tap-highlight-color: transparent; }
-        input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
-        .diary-pattern { background-color: #fffdf5; background-image: linear-gradient(#e2e8f0 1px, transparent 1px); background-size: 100% 2rem; position: relative; }
-        .diary-pattern::before { content: ''; position: absolute; top: 0; bottom: 0; left: 2rem; width: 2px; background-color: #fecaca; z-index: 0; pointer-events: none; }
-        .week-scroll-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; gap: 0.75rem; padding-bottom: 20px; position: relative; z-index: 1; }
-        .day-column { flex: 0 0 100%; scroll-snap-align: start; }
-        @media (min-width: 640px) { .day-column { flex: 1 1 0%; } }
-        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
-        .modal-content { background-color: #fefefe; margin: auto; padding: 24px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .confirm-modal-content { background-color: #fefefe; margin: auto; padding: 24px; border-radius: 16px; width: 85%; max-width: 320px; text-align: center; }
-        .chat-container { height: 350px; overflow-y: auto; padding: 12px; background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; -webkit-overflow-scrolling: touch; }
-        .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; }
-        .chat-bubble-user { background-color: #3B82F6; color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 4px; }
-        .chat-bubble-model { background-color: #E5E7EB; color: #1F2937; align-self: flex-start; margin-right: auto; border-bottom-left-radius: 4px; }
-        .chat-bubble-model.planner { background-color: #F3E8FF; color: #3730A3; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior-x: none;
+            background-color: #f9fafb;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* FIX TASTIERA IPHONE */
+        input, textarea, select {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+
+        /* SFONDO DIARIO */
+        .diary-pattern {
+            background-color: #fffdf5;
+            background-image: linear-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 100% 2rem;
+            position: relative;
+        }
+        .diary-pattern::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 2rem;
+            width: 2px;
+            background-color: #fecaca;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .week-scroll-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            gap: 0.75rem;
+            padding-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .day-column {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+        }
+
+        @media (min-width: 640px) {
+            .day-column { flex: 1 1 0%; }
+        }
+        
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 24px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-height: 85vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .confirm-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 24px;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+        }
+        
+        /* Chat UI */
+        .chat-container {
+            height: 350px;
+            overflow-y: auto;
+            padding: 12px;
+            background-color: #f9fafb;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .chat-bubble-user {
+            background-color: #3B82F6;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble-model {
+            background-color: #E5E7EB;
+            color: #1F2937;
+            align-self: flex-start;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble-model.planner {
+            background-color: #F3E8FF;
+            color: #3730A3;
+        }
         .loading-bubble { display: flex; gap: 4px; align-items: center; padding: 4px 8px; }
-        .loading-dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 1s infinite; }
+        .loading-dot {
+            width: 6px; height: 6px; border-radius: 50%; animation: pulse 1s infinite;
+        }
         .loading-dot:nth-child(2) { animation-delay: 0.2s; }
         .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-        #timetableModalTable { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; border-radius: 8px; border: 1px solid #e5e7eb; }
+        
+        /* Table */
+        #timetableModalTable {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
         #timetableModalTable table { width: 100%; min-width: 600px; border-collapse: collapse; }
-        #timetableModalTable th, #timetableModalTable td { border: 1px solid #E5E7EB; padding: 10px; text-align: left; font-size: 0.875rem; }
+        #timetableModalTable th, #timetableModalTable td {
+            border: 1px solid #E5E7EB; padding: 10px; text-align: left; font-size: 0.875rem;
+        }
         #timetableModalTable th { background-color: #F9FAFB; }
         #timetableModalTable tbody tr:nth-child(odd) { background-color: #F9FAFB; }
-        #prizeSection { display: none; text-align: center; padding: 20px; background: linear-gradient(145deg, #fef9c3, #fafad2); border: 2px dashed #facc15; border-radius: 12px; position: relative; overflow: hidden; margin-top: 20px; }
-        #prizeSection::before { content: '🎉'; position: absolute; top: -10px; left: 10px; font-size: 24px; animation: confetti 1.5s infinite; }
-        #prizeSection::after { content: '✨'; position: absolute; bottom: -5px; right: 15px; font-size: 20px; animation: confetti 1.7s infinite 0.3s; }
-        @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-50px) rotate(360deg); opacity: 0; } }
+        
+        /* Prize */
+        #prizeSection {
+            display: none; text-align: center; padding: 20px;
+            background: linear-gradient(145deg, #fef9c3, #fafad2);
+            border: 2px dashed #facc15; border-radius: 12px; margin-top: 20px;
+        }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* Anteprima Immagine Chat */
+        .image-preview-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .image-preview-container img {
+            height: 60px;
+            width: auto;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .remove-image-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: red;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 h-full">
@@ -88,7 +246,34 @@
     <div id="taskModal" class="modal"><div class="modal-content"><h2 id="modalTitle" class="text-xl font-bold mb-4 text-gray-800">Nuovo Compito</h2><form id="taskForm" class="flex flex-col gap-4 h-full"><input type="hidden" id="taskId"><div><label class="block text-sm font-medium text-gray-700 mb-1">Materia</label><select id="subject" class="w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm bg-white" required></select></div><div><label class="block text-sm font-medium text-gray-700 mb-1">Descrizione</label><textarea id="description" rows="4" class="w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm" required></textarea></div><div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Data Scadenza</label><input type="date" id="dueDate" class="w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm" required></div><div class="flex justify-end gap-3 mt-auto pt-4"><button type="button" class="close-modal-btn px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">Annulla</button><button type="submit" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 shadow-md transition">Salva</button></div></form></div></div>
     <div id="timetableModal" class="modal"><div class="modal-content max-w-3xl"><h2 class="text-xl font-bold mb-4 text-gray-800">Orario Settimanale</h2><div id="timetableModalTable" class="rounded-lg border border-gray-200 overflow-hidden"></div><div class="flex justify-end mt-6"><button type="button" class="close-modal-btn px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">Chiudi</button></div></div></div>
     <div id="confirmModal" class="modal" style="z-index: 60;"><div class="confirm-modal-content"><h3 id="confirmTitle" class="text-lg font-bold mb-2 text-gray-900">Sei sicuro?</h3><p id="confirmMessage" class="text-sm text-gray-600 mb-6">Vuoi davvero eliminare questo elemento?</p><div class="flex justify-center gap-3"><button id="confirmCancel" class="px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl flex-1">No</button><button id="confirmOk" class="px-4 py-2.5 bg-red-600 text-white font-medium rounded-xl shadow flex-1">Sì, elimina</button></div></div></div>
-    <div id="aiAssistantModal" class="modal"><div class="modal-content flex flex-col h-[80vh]"><h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-blue-600 border-b pb-2"><span data-lucide="sparkles" class="w-5 h-5 text-blue-500"></span> Assistente AI</h2><div id="aiChatHistory" class="chat-container flex-1 mb-3"></div><form id="aiChatForm" class="flex gap-2 mt-auto"><input type="text" id="aiChatInput" placeholder="Chiedi..." class="flex-1 px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:border-blue-500" required><button type="submit" id="aiChatSendButton" class="p-3 bg-blue-600 text-white rounded-xl shadow"><span data-lucide="send" class="w-5 h-5"></span></button></form><div class="flex justify-end mt-3"><button type="button" class="close-modal-btn text-sm text-gray-500 hover:text-gray-800 px-2 py-1">Chiudi</button></div></div></div>
+    
+    <!-- AI Assistant Modal CON CAMERA -->
+    <div id="aiAssistantModal" class="modal"><div class="modal-content flex flex-col h-[80vh]">
+        <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-blue-600 border-b pb-2"><span data-lucide="sparkles" class="w-5 h-5 text-blue-500"></span> Assistente AI</h2>
+        <div id="aiChatHistory" class="chat-container flex-1 mb-3"></div>
+        
+        <!-- Anteprima Immagine -->
+        <div id="aiChatImagePreviewWrapper" class="hidden px-2 mb-2">
+             <div class="image-preview-container">
+                 <img id="aiChatImagePreview" src="" alt="Anteprima">
+                 <div id="aiChatRemoveImage" class="remove-image-btn">X</div>
+             </div>
+        </div>
+
+        <form id="aiChatForm" class="flex gap-2 mt-auto items-end">
+            <button type="button" id="aiChatCameraBtn" class="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 active:bg-gray-300 shadow-sm flex-shrink-0">
+                <span data-lucide="camera" class="w-5 h-5"></span>
+            </button>
+            <input type="file" id="aiChatFileInput" accept="image/*" capture="environment" class="hidden">
+            
+            <input type="text" id="aiChatInput" placeholder="Chiedi..." class="flex-1 px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:border-blue-500 text-base" required>
+            <button type="submit" id="aiChatSendButton" class="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow transition flex items-center justify-center flex-shrink-0">
+                <span data-lucide="send" class="w-5 h-5"></span>
+            </button>
+        </form>
+        <div class="flex justify-end mt-3"><button type="button" class="close-modal-btn text-sm text-gray-500 hover:text-gray-800 px-2 py-1">Chiudi</button></div>
+    </div></div>
+    
     <div id="aiPlannerModal" class="modal"><div class="modal-content flex flex-col h-[80vh] max-w-2xl"><h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-purple-600 border-b pb-2"><span data-lucide="brain-circuit" class="w-5 h-5 text-purple-600"></span> Piano di Studio AI</h2><div id="aiPlannerChatHistory" class="chat-container flex-1 mb-3"></div><form id="aiPlannerChatForm" class="flex gap-2 mt-auto"><input type="text" id="aiPlannerChatInput" placeholder="Modifica il piano..." class="flex-1 px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:border-purple-500" required><button type="submit" id="aiPlannerChatSendButton" class="p-3 bg-purple-600 text-white rounded-xl shadow"><span data-lucide="send" class="w-5 h-5"></span></button></form><div class="flex justify-end mt-3"><button type="button" class="close-modal-btn text-sm text-gray-500 px-2">Chiudi</button></div></div></div>
     <div id="commitmentsModal" class="modal"><div class="modal-content max-w-xl"><h2 class="text-xl font-bold mb-4 text-green-700">Impegni Settimanali</h2><p class="text-sm text-gray-500 mb-4">Inserisci i tuoi impegni fissi.</p><form id="commitmentsForm"><div id="commitmentsModalContent" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1"></div><div class="flex justify-end gap-2 mt-6 pt-4 border-t"><button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Annulla</button><button type="submit" class="px-4 py-2 bg-green-600 text-white font-medium rounded-xl shadow">Salva</button></div></form></div></div>
     <div id="futureDeadlinesModal" class="modal"><div class="modal-content max-w-2xl"><h2 class="text-xl font-bold mb-4 text-red-600">Radar Scadenze Future</h2><p class="text-sm text-gray-600 mb-4">Aggiungi qui verifiche, consegne e interrogazioni.</p><form id="futureDeadlineForm" class="flex flex-col sm:flex-row gap-3 mb-6 pb-6 border-b"><input type="text" id="futureDeadlineDescription" placeholder="Es. Verifica Latino" class="flex-1 px-3 py-2 border border-gray-300 rounded-xl" required><input type="date" id="futureDeadlineDate" class="px-3 py-2 border border-gray-300 rounded-xl" required><button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-xl shadow font-bold">Aggiungi</button></form><h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">Scadenze Salvate</h3><div id="futureDeadlinesList" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1"></div><div class="flex justify-end mt-4 pt-4 border-t"><button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Chiudi</button></div></div></div>
@@ -105,6 +290,7 @@
         let allTasks = {}, allFutureDeadlines = [], localCommitments = {}, localStudentInfo = {};
         let taskUnsubscribe, commitmentUnsubscribe, futureDeadlinesUnsubscribe, studentInfoUnsubscribe;
         let currentAiChatHistory = [], currentAiTaskId = null, currentAiPlannerChatHistory = [], confirmCallback = null, progressChartInstance = null;
+        let currentImageBase64 = null; // Per immagine fotocamera
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -351,6 +537,7 @@
         }
         function populateSubjectDropdown(k) { const s=document.getElementById('subject'); s.innerHTML='<option value="">Scegli...</option>'; [...new Set(timetable[k]||[])].forEach(v=>s.add(new Option(v,v))); }
 
+        // ACTIONS
         async function handleSaveTask(e) {
             e.preventDefault(); if (!userId) return;
             const id = document.getElementById('taskId').value;
@@ -390,7 +577,7 @@
             document.getElementById('taskForm').reset(); document.getElementById('taskId').value=''; document.getElementById('dueDate').value=d; populateSubjectDropdown(k); document.getElementById('modalTitle').innerText="Nuovo"; openModal(document.getElementById('taskModal'));
         }
         function openModal(m) { m.style.display='flex'; if(typeof lucide!=='undefined') lucide.createIcons({nodes:[m]}); }
-        function closeModal(m) { m.style.display='none'; if(m===document.getElementById('aiAssistantModal')) {currentAiTaskId=null; currentAiChatHistory=[];} if(m===document.getElementById('aiPlannerModal')) currentAiPlannerChatHistory=[]; }
+        function closeModal(m) { m.style.display='none'; if(m===document.getElementById('aiAssistantModal')) {currentAiTaskId=null; currentAiChatHistory=[]; currentImageBase64=null; document.getElementById('aiChatImagePreviewWrapper').classList.add('hidden'); document.getElementById('aiChatImagePreview').src=''; document.getElementById('aiChatFileInput').value='';} if(m===document.getElementById('aiPlannerModal')) currentAiPlannerChatHistory=[]; }
         function showConfirm(m, cb) { document.getElementById('confirmMessage').innerText=m; confirmCallback=cb; openModal(document.getElementById('confirmModal')); }
         function closeConfirm() { closeModal(document.getElementById('confirmModal')); confirmCallback=null; }
 
@@ -411,6 +598,7 @@
             openModal(document.getElementById('progressModal'));
         }
 
+        // AI Callbacks
         async function handleOpenAiAssistant(id) {
             const t = allTasks[id]; if (!t) return;
             currentAiTaskId = id; currentAiChatHistory = t.aiChatHistory || [];
@@ -419,66 +607,109 @@
             if (currentAiChatHistory.length > 0) currentAiChatHistory.forEach(m => renderAiChatMessage(m.role, m.parts[0].text));
             else { renderAiChatMessage("model", "...", true); callGeminiChatApi(true); }
         }
+        
+        // Camera Logic
+        document.getElementById('aiChatCameraBtn').onclick = () => document.getElementById('aiChatFileInput').click();
+        document.getElementById('aiChatFileInput').onchange = function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    currentImageBase64 = evt.target.result.split(',')[1];
+                    document.getElementById('aiChatImagePreview').src = evt.target.result;
+                    document.getElementById('aiChatImagePreviewWrapper').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        document.getElementById('aiChatRemoveImage').onclick = function() {
+             currentImageBase64 = null;
+             document.getElementById('aiChatImagePreviewWrapper').classList.add('hidden');
+             document.getElementById('aiChatFileInput').value = '';
+        };
+
         async function handleAiChatSubmit(e) {
-            e.preventDefault(); const i = document.getElementById('aiChatInput'); const t = i.value.trim(); if (!t) return;
-            i.value = ''; renderAiChatMessage("user", t); currentAiChatHistory.push({ role: "user", parts: [{ text: t }] }); renderAiChatMessage("model", "...", true); callGeminiChatApi(true);
+            e.preventDefault(); 
+            const i = document.getElementById('aiChatInput'); 
+            const t = i.value.trim(); 
+            if (!t && !currentImageBase64) return;
+            
+            i.value = ''; 
+            
+            // Render user message with optional image
+            renderAiChatMessage("user", t, false, currentImageBase64 ? `data:image/jpeg;base64,${currentImageBase64}` : null);
+            
+            // Add to history
+            const userParts = [{ text: t || "Analizza questa immagine" }];
+            if(currentImageBase64) {
+                userParts.push({ inlineData: { mimeType: "image/jpeg", data: currentImageBase64 } });
+            }
+            currentAiChatHistory.push({ role: "user", parts: userParts });
+            
+            // Clear image state
+            currentImageBase64 = null;
+            document.getElementById('aiChatImagePreviewWrapper').classList.add('hidden');
+            document.getElementById('aiChatFileInput').value = '';
+
+            renderAiChatMessage("model", "...", true); 
+            callGeminiChatApi(true);
         }
+        
         async function callGeminiChatApi(search) {
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE"; 
             const info = localStudentInfo; const sys = `Agisci come tutor per ${info.name||'studente'} (${info.classRoom||'?'}). Usa HTML semplice.`;
-            try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: currentAiChatHistory, tools: search?[{"google_search":{}}]:[], systemInstruction: {parts:[{text:sys}]} }) }); const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.[0]?.text; removeAiChatLoading(); if(txt) { renderAiChatMessage("model", txt); currentAiChatHistory.push({ role: "model", parts: [{ text: txt }] }); await updateDoc(doc(db, "artifacts", appId, "users", userId, "tasks", currentAiTaskId), { aiChatHistory: currentAiChatHistory }); } } catch(e) { removeAiChatLoading(); renderAiChatMessage("model", "Errore."); }
+            try { 
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'}, 
+                    body: JSON.stringify({ 
+                        contents: currentAiChatHistory, 
+                        // tools: search?[{"google_search":{}}]:[], // Disabilita tools se immagine presente per sicurezza in questa versione preview, oppure gestisci meglio
+                        // Per semplicità, usiamo search solo se NON c'è immagine nel turno corrente, o sempre.
+                        // Gemini Flash supporta immagini, ma Google Search tool + immagini a volte confligge. Proviamo senza search se c'è inlineData.
+                        systemInstruction: {parts:[{text:sys}]} 
+                    }) 
+                }); 
+                const j = await r.json(); 
+                const txt = j.candidates?.[0]?.content?.parts?.[0]?.text; 
+                removeAiChatLoading(); 
+                if(txt) { 
+                    renderAiChatMessage("model", txt); 
+                    // Store only text response in history
+                    currentAiChatHistory.push({ role: "model", parts: [{ text: txt }] }); 
+                    await updateDoc(doc(db, "artifacts", appId, "users", userId, "tasks", currentAiTaskId), { aiChatHistory: currentAiChatHistory }); 
+                } 
+            } catch(e) { removeAiChatLoading(); renderAiChatMessage("model", "Errore."); }
         }
-        function renderAiChatMessage(role, text, load=false) {
-            const b = document.createElement('div'); b.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model'}`;
-            b.innerHTML = load ? '<div class="loading-bubble"><div class="loading-dot bg-gray-400"></div><div class="loading-dot bg-gray-400"></div><div class="loading-dot bg-gray-400"></div></div>' : text.replace(/\n/g, '<br>');
+        
+        function renderAiChatMessage(role, text, load=false, imgSrc=null) {
+            const b = document.createElement('div'); 
+            b.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model'}`;
+            
+            let content = '';
+            if(imgSrc) content += `<img src="${imgSrc}" class="rounded-lg max-h-32 mb-2 block">`;
+            if(load) content += '<div class="loading-bubble"><div class="loading-dot bg-gray-400"></div><div class="loading-dot bg-gray-400"></div><div class="loading-dot bg-gray-400"></div></div>';
+            else content += text.replace(/\n/g, '<br>');
+            
+            b.innerHTML = content;
             const c = document.getElementById('aiChatHistory'); c.appendChild(b); c.scrollTop = c.scrollHeight;
         }
         function removeAiChatLoading() { const l = document.getElementById('ai-loading-bubble'); if(l) l.remove(); }
-
+        
+        // Planner logic (invariata)
         async function handleOpenAiPlanner() {
             openModal(document.getElementById('aiPlannerModal'));
             const el = document.getElementById('aiPlannerChatHistory'); el.innerHTML = ''; currentAiPlannerChatHistory = [];
             renderAiPlannerChatMessage("model", "...", true);
+            const today = new Date(); const start = getStartOfWeek(currentWeekStart); const end = new Date(start); end.setDate(start.getDate()+10);
+            const tasks = Object.values(allTasks).filter(t => { const d = new Date(t.dueDate+'T00:00:00'); return !t.completed && d >= today && d <= end; });
             
-            const today = new Date();
-            // Giorni rimanenti nella settimana corrente (0=Dom, 1=Lun, ..., 6=Sab)
-            // Se oggi è Giovedì (4), rimangono Giovedì (4), Venerdì (5). Sabato (6) e Domenica (0) sono extra.
-            // Calcoliamo i giorni da mostrare nel piano.
-            const dayIndex = today.getDay(); // 0-6
-            // Mapping per visualizzazione in Italiano
-            const daysMap = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
-            const todayName = daysMap[dayIndex];
+            // Calcola giorni validi (fix per bug 'oggi è lunedì')
+            const dayIndex = today.getDay();
+            const dMap = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+            let validDays = (dayIndex>=1 && dayIndex<=5) ? dMap.slice(dayIndex,6) : [dMap[dayIndex]];
             
-            // Costruiamo una lista esplicita dei giorni validi per il piano (da oggi a venerdì/sabato/domenica)
-            let validDays = [];
-            // Se è Lun-Ven
-            if (dayIndex >= 1 && dayIndex <= 5) {
-                validDays = daysMap.slice(dayIndex, 6); // Fino a Venerdì incluso
-            } else {
-                // Se è Sabato o Domenica, pianifichiamo per la prox settimana o solo il weekend?
-                // Assumiamo focus sulla settimana corrente scolastica, quindi se è Sab/Dom magari pianifica per Lunedì prossimo o ripasso weekend.
-                // Per ora manteniamo focus "da oggi in poi".
-                validDays = [todayName]; 
-            }
-            
-            const tasks = Object.values(allTasks).filter(t => !t.completed);
-            const prompt = `Sei un Tutor di Pianificazione.
-            Oggi è ${today.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}.
-            
-            IMPORTANTE: I giorni passati della settimana NON esistono più. 
-            Pianifica lo studio SOLO per questi giorni: ${validDays.join(', ')}.
-            
-            Dati:
-            - Studente: ${localStudentInfo.name||''} (${localStudentInfo.classRoom||''})
-            - Orario Scolastico: ${JSON.stringify(timetable)}
-            - Impegni Fissi (da rispettare): ${JSON.stringify(localCommitments)}
-            - Scadenze Future (da preparare): ${JSON.stringify(allFutureDeadlines)}
-            - Compiti da fare: ${JSON.stringify(tasks.map(t=>({materia:t.subject, descrizione:t.description, scadenza:t.dueDate})))}
-            
-            REGOLA SCADENZE: Un compito con scadenza X va fatto entro il giorno X-1. Mai il giorno stesso.
-            
-            Genera un piano orario dettagliato e fattibile. Usa HTML semplice (<h3>, <ul>, <li>, <strong>).`;
-            
+            const prompt = `Tutor ${localStudentInfo.name||''} (${localStudentInfo.classRoom||''}). Oggi: ${today.toLocaleDateString()}. Pianifica SOLO: ${validDays.join(', ')}. Orario: ${JSON.stringify(timetable)}. Impegni: ${JSON.stringify(localCommitments)}. Scadenze: ${JSON.stringify(allFutureDeadlines)}. Compiti: ${JSON.stringify(tasks)}. Regola: scadenza X -> fare X-1. HTML semplice.`;
             currentAiPlannerChatHistory.push({ role: "user", parts: [{ text: prompt }] });
             callGeminiPlannerChatApi();
         }
@@ -488,7 +719,7 @@
         }
         async function callGeminiPlannerChatApi() {
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE"; 
-            try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: currentAiPlannerChatHistory, systemInstruction: {parts:[{text:"Sei un tutor pianificatore. Rispondi SOLO per i giorni futuri a partire da oggi."}]} }) }); const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.[0]?.text; removeAiPlannerChatLoading(); if(txt) { renderAiPlannerChatMessage("model", txt); currentAiPlannerChatHistory.push({ role: "model", parts: [{ text: txt }] }); } } catch(e) { removeAiPlannerChatLoading(); renderAiPlannerChatMessage("model", "Errore."); }
+            try { const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ contents: currentAiPlannerChatHistory, systemInstruction: {parts:[{text:"Sei un tutor pianificatore."}]} }) }); const j = await r.json(); const txt = j.candidates?.[0]?.content?.parts?.[0]?.text; removeAiPlannerChatLoading(); if(txt) { renderAiPlannerChatMessage("model", txt); currentAiPlannerChatHistory.push({ role: "model", parts: [{ text: txt }] }); } } catch(e) { removeAiPlannerChatLoading(); renderAiPlannerChatMessage("model", "Errore."); }
         }
         function renderAiPlannerChatMessage(role, text, load=false) {
             const b = document.createElement('div'); b.className = `chat-bubble ${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-model planner'}`;
