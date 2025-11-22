@@ -2,20 +2,15 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport ottimizzato per iOS -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bacheca Compiti Settimana</title>
 
-    <!-- Meta tags per iOS (PWA) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Compiti">
     <meta name="theme-color" content="#3B82F6">
-
-    <!-- Icona -->
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3238/3238016.png">
-     
-    <!-- Librerie Esterne (Versioni Fisse) -->
+
     <script src="https://cdn.tailwindcss.com/3.4.5"></script>
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -23,188 +18,44 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            overscroll-behavior-x: none;
-            background-color: #f9fafb;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* FIX TASTIERA IPHONE */
-        input, textarea, select {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
-
-        /* SFONDO DIARIO */
-        .diary-pattern {
-            background-color: #fffdf5;
-            background-image: linear-gradient(#e2e8f0 1px, transparent 1px);
-            background-size: 100% 2rem;
-            position: relative;
-        }
-        .diary-pattern::before {
-            content: '';
-            position: absolute;
-            top: 0; bottom: 0; left: 2rem;
-            width: 2px;
-            background-color: #fecaca;
-            z-index: 0;
-            pointer-events: none;
-        }
-        
-        .week-scroll-container {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            gap: 0.75rem;
-            padding-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .day-column {
-            flex: 0 0 100%;
-            scroll-snap-align: start;
-        }
-
-        @media (min-width: 640px) {
-            .day-column { flex: 1 1 0%; }
-        }
-        
-        /* Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 50;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 24px;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            max-height: 85vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .confirm-modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 24px;
-            border-radius: 16px;
-            width: 85%;
-            max-width: 320px;
-            text-align: center;
-        }
-        
-        /* Chat UI */
-        .chat-container {
-            height: 350px;
-            overflow-y: auto;
-            padding: 12px;
-            background-color: #f9fafb;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            -webkit-overflow-scrolling: touch;
-        }
-        .chat-bubble {
-            max-width: 85%;
-            padding: 10px 14px;
-            border-radius: 18px;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-        .chat-bubble-user {
-            background-color: #3B82F6;
-            color: white;
-            align-self: flex-end;
-            margin-left: auto;
-            border-bottom-right-radius: 4px;
-        }
-        .chat-bubble-model {
-            background-color: #E5E7EB;
-            color: #1F2937;
-            align-self: flex-start;
-            margin-right: auto;
-            border-bottom-left-radius: 4px;
-        }
-        .chat-bubble-model.planner {
-            background-color: #F3E8FF;
-            color: #3730A3;
-        }
+        body { font-family: 'Inter', sans-serif; overscroll-behavior-x: none; background-color: #f9fafb; -webkit-tap-highlight-color: transparent; }
+        input, textarea, select { -webkit-user-select: text !important; user-select: text !important; }
+        .diary-pattern { background-color: #fffdf5; background-image: linear-gradient(#e2e8f0 1px, transparent 1px); background-size: 100% 2rem; position: relative; }
+        .diary-pattern::before { content: ''; position: absolute; top: 0; bottom: 0; left: 2rem; width: 2px; background-color: #fecaca; z-index: 0; pointer-events: none; }
+        .week-scroll-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; gap: 0.75rem; padding-bottom: 20px; position: relative; z-index: 1; }
+        .day-column { flex: 0 0 100%; scroll-snap-align: start; }
+        @media (min-width: 640px) { .day-column { flex: 1 1 0%; } }
+        .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.4); align-items: center; justify-content: center; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fefefe; margin: auto; padding: 24px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .confirm-modal-content { background-color: #fefefe; margin: auto; padding: 24px; border-radius: 16px; width: 85%; max-width: 320px; text-align: center; }
+        .chat-container { height: 350px; overflow-y: auto; padding: 12px; background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb; -webkit-overflow-scrolling: touch; }
+        .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4; }
+        .chat-bubble-user { background-color: #3B82F6; color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 4px; }
+        .chat-bubble-model { background-color: #E5E7EB; color: #1F2937; align-self: flex-start; margin-right: auto; border-bottom-left-radius: 4px; }
+        .chat-bubble-model.planner { background-color: #F3E8FF; color: #3730A3; }
         .loading-bubble { display: flex; gap: 4px; align-items: center; padding: 4px 8px; }
-        .loading-dot {
-            width: 6px; height: 6px; border-radius: 50%; animation: pulse 1s infinite;
-        }
+        .loading-dot { width: 6px; height: 6px; border-radius: 50%; animation: pulse 1s infinite; }
         .loading-dot:nth-child(2) { animation-delay: 0.2s; }
         .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        /* Table */
-        #timetableModalTable {
-            display: block;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            white-space: nowrap;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
+        #timetableModalTable { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; border-radius: 8px; border: 1px solid #e5e7eb; }
         #timetableModalTable table { width: 100%; min-width: 600px; border-collapse: collapse; }
-        #timetableModalTable th, #timetableModalTable td {
-            border: 1px solid #E5E7EB; padding: 10px; text-align: left; font-size: 0.875rem;
-        }
+        #timetableModalTable th, #timetableModalTable td { border: 1px solid #E5E7EB; padding: 10px; text-align: left; font-size: 0.875rem; }
         #timetableModalTable th { background-color: #F9FAFB; }
         #timetableModalTable tbody tr:nth-child(odd) { background-color: #F9FAFB; }
-        
-        /* Prize */
-        #prizeSection {
-            display: none; text-align: center; padding: 20px;
-            background: linear-gradient(145deg, #fef9c3, #fafad2);
-            border: 2px dashed #facc15; border-radius: 12px; margin-top: 20px;
-        }
+        #prizeSection { display: none; text-align: center; padding: 20px; background: linear-gradient(145deg, #fef9c3, #fafad2); border: 2px dashed #facc15; border-radius: 12px; position: relative; overflow: hidden; margin-top: 20px; }
+        #prizeSection::before { content: '🎉'; position: absolute; top: -10px; left: 10px; font-size: 24px; animation: confetti 1.5s infinite; }
+        #prizeSection::after { content: '✨'; position: absolute; bottom: -5px; right: 15px; font-size: 20px; animation: confetti 1.7s infinite 0.3s; }
+        @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-50px) rotate(360deg); opacity: 0; } }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-
+        
         /* Anteprima Immagine Chat */
-        .image-preview-container {
-            position: relative;
-            display: inline-block;
-            margin-top: 5px;
-            margin-bottom: 5px;
-        }
-        .image-preview-container img {
-            height: 60px;
-            width: auto;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
-        .remove-image-btn {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: red;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-        }
+        .image-preview-container { position: relative; display: inline-block; margin-top: 5px; margin-bottom: 5px; }
+        .image-preview-container img { height: 60px; width: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .remove-image-btn { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+        
+        /* Tabs */
+        .tab-active { color: #16a34a; border-bottom: 2px solid #16a34a; font-weight: 600; }
+        .tab-inactive { color: #6b7280; font-weight: 500; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 h-full">
@@ -247,16 +98,11 @@
     <div id="timetableModal" class="modal"><div class="modal-content max-w-3xl"><h2 class="text-xl font-bold mb-4 text-gray-800">Orario Settimanale</h2><div id="timetableModalTable" class="rounded-lg border border-gray-200 overflow-hidden"></div><div class="flex justify-end mt-6"><button type="button" class="close-modal-btn px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition">Chiudi</button></div></div></div>
     <div id="confirmModal" class="modal" style="z-index: 60;"><div class="confirm-modal-content"><h3 id="confirmTitle" class="text-lg font-bold mb-2 text-gray-900">Sei sicuro?</h3><p id="confirmMessage" class="text-sm text-gray-600 mb-6">Vuoi davvero eliminare questo elemento?</p><div class="flex justify-center gap-3"><button id="confirmCancel" class="px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl flex-1">No</button><button id="confirmOk" class="px-4 py-2.5 bg-red-600 text-white font-medium rounded-xl shadow flex-1">Sì, elimina</button></div></div></div>
     
-    <!-- AI Assistant Modal -->
     <div id="aiAssistantModal" class="modal"><div class="modal-content flex flex-col h-[80vh]">
         <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-blue-600 border-b pb-2"><span data-lucide="sparkles" class="w-5 h-5 text-blue-500"></span> Assistente AI</h2>
         <div id="aiChatHistory" class="chat-container flex-1 mb-3"></div>
-        <!-- Preview Immagine -->
         <div id="aiChatImagePreviewWrapper" class="hidden px-2 mb-2">
-             <div class="image-preview-container">
-                 <img id="aiChatImagePreview" src="" alt="Anteprima">
-                 <div id="aiChatRemoveImage" class="remove-image-btn">X</div>
-             </div>
+             <div class="image-preview-container"><img id="aiChatImagePreview" src="" alt="Anteprima"><div id="aiChatRemoveImage" class="remove-image-btn">X</div></div>
         </div>
         <form id="aiChatForm" class="flex gap-2 mt-auto items-end">
             <button type="button" id="aiChatCameraBtn" class="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 active:bg-gray-300 shadow-sm flex-shrink-0"><span data-lucide="camera" class="w-5 h-5"></span></button>
@@ -268,7 +114,45 @@
     </div></div>
     
     <div id="aiPlannerModal" class="modal"><div class="modal-content flex flex-col h-[80vh] max-w-2xl"><h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-purple-600 border-b pb-2"><span data-lucide="brain-circuit" class="w-5 h-5 text-purple-600"></span> Piano di Studio AI</h2><div id="aiPlannerChatHistory" class="chat-container flex-1 mb-3"></div><form id="aiPlannerChatForm" class="flex gap-2 mt-auto"><input type="text" id="aiPlannerChatInput" placeholder="Modifica il piano..." class="flex-1 px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:border-purple-500" required><button type="submit" id="aiPlannerChatSendButton" class="p-3 bg-purple-600 text-white rounded-xl shadow"><span data-lucide="send" class="w-5 h-5"></span></button></form><div class="flex justify-end mt-3"><button type="button" class="close-modal-btn text-sm text-gray-500 px-2">Chiudi</button></div></div></div>
-    <div id="commitmentsModal" class="modal"><div class="modal-content max-w-xl"><h2 class="text-xl font-bold mb-4 text-green-700">Impegni Settimanali</h2><p class="text-sm text-gray-500 mb-4">Inserisci i tuoi impegni fissi.</p><form id="commitmentsForm"><div id="commitmentsModalContent" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1"></div><div class="flex justify-end gap-2 mt-6 pt-4 border-t"><button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Annulla</button><button type="submit" class="px-4 py-2 bg-green-600 text-white font-medium rounded-xl shadow">Salva</button></div></form></div></div>
+    
+    <!-- Commitments Modal (Con Tab) -->
+    <div id="commitmentsModal" class="modal">
+        <div class="modal-content max-w-xl">
+            <h2 class="text-xl font-bold mb-4 text-green-700">Impegni</h2>
+            
+            <div class="flex border-b border-gray-200 mb-4">
+                <button id="tabWeekly" class="flex-1 py-2 text-sm font-medium tab-active">Settimanali (Fissi)</button>
+                <button id="tabOccasional" class="flex-1 py-2 text-sm font-medium tab-inactive">Occasionali (Date)</button>
+            </div>
+
+            <!-- Content Weekly -->
+            <div id="contentWeekly">
+                <p class="text-sm text-gray-500 mb-3">Attività fisse che si ripetono ogni settimana.</p>
+                <form id="commitmentsForm">
+                    <div id="commitmentsModalContent" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1"></div>
+                    <div class="flex justify-end gap-2 mt-6 pt-4 border-t">
+                        <button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Chiudi</button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white font-medium rounded-xl shadow">Salva</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Content Occasional -->
+            <div id="contentOccasional" class="hidden">
+                <p class="text-sm text-gray-500 mb-3">Impegni una tantum (visite, eventi, ecc.).</p>
+                <form id="occasionalForm" class="flex gap-2 mb-4">
+                    <input type="text" id="occDescription" placeholder="Es. Dentista" class="flex-1 px-3 py-2 border border-gray-300 rounded-xl" required>
+                    <input type="date" id="occDate" class="px-3 py-2 border border-gray-300 rounded-xl" required>
+                    <button type="submit" class="px-3 py-2 bg-green-600 text-white rounded-xl shadow font-bold">+</button>
+                </form>
+                <div id="occasionalList" class="space-y-2 max-h-[30vh] overflow-y-auto"></div>
+                <div class="flex justify-end mt-4 pt-4 border-t">
+                     <button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Chiudi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="futureDeadlinesModal" class="modal"><div class="modal-content max-w-2xl"><h2 class="text-xl font-bold mb-4 text-red-600">Radar Scadenze Future</h2><p class="text-sm text-gray-600 mb-4">Aggiungi qui verifiche, consegne e interrogazioni.</p><form id="futureDeadlineForm" class="flex flex-col sm:flex-row gap-3 mb-6 pb-6 border-b"><input type="text" id="futureDeadlineDescription" placeholder="Es. Verifica Latino" class="flex-1 px-3 py-2 border border-gray-300 rounded-xl" required><input type="date" id="futureDeadlineDate" class="px-3 py-2 border border-gray-300 rounded-xl" required><button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-xl shadow font-bold">Aggiungi</button></form><h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">Scadenze Salvate</h3><div id="futureDeadlinesList" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1"></div><div class="flex justify-end mt-4 pt-4 border-t"><button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Chiudi</button></div></div></div>
     <div id="progressModal" class="modal"><div class="modal-content"><h2 class="text-xl font-bold mb-6 text-yellow-600 flex items-center justify-center gap-2"><span data-lucide="pie-chart" class="w-6 h-6"></span> Progressi</h2><div class="grid grid-cols-1 gap-4 mb-4"><div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Per Domani</h3><p class="text-xs text-blue-600 mb-1">Compiti completati (scadenza domani)</p><p id="dailyStats" class="text-3xl font-black text-blue-900">0 / 0</p></div><div class="bg-purple-50 p-4 rounded-2xl border border-purple-100"><h3 class="text-xs font-bold text-purple-800 uppercase tracking-wider mb-1">Questa Settimana</h3><p class="text-xs text-purple-600 mb-1">Totale completato</p><p id="weeklyStats" class="text-3xl font-black text-purple-900">0 / 0</p></div></div><div class="flex justify-center mb-4 pt-2"><div class="w-40 h-40 relative"><canvas id="progressChart"></canvas></div></div><div id="prizeSection" class="mt-4"><div class="text-4xl mb-1">🏆</div><h3 class="text-lg font-bold text-yellow-800">Grandioso!</h3><p class="text-yellow-700 text-sm">Settimana completata!</p></div><div class="flex justify-end mt-6"><button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Chiudi</button></div></div></div>
     <div id="studentInfoModal" class="modal"><div class="modal-content max-w-lg"><h2 class="text-xl font-bold mb-4 text-blue-800 flex items-center gap-2"><span data-lucide="user-circle" class="w-6 h-6"></span> Profilo Studente</h2><form id="studentInfoForm" class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome</label><input type="text" id="studentName" class="w-full px-3 py-2 border border-gray-300 rounded-xl" required></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Cognome</label><input type="text" id="studentSurname" class="w-full px-3 py-2 border border-gray-300 rounded-xl" required></div></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Età</label><input type="number" id="studentAge" class="w-full px-3 py-2 border border-gray-300 rounded-xl" required></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sesso</label><select id="studentGender" class="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white"><option value="Femmina">Femmina</option><option value="Maschio">Maschio</option><option value="Altro">Altro</option></select></div></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Scuola</label><input type="text" id="studentSchool" class="w-full px-3 py-2 border border-gray-300 rounded-xl"></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Classe</label><input type="text" id="studentClass" class="w-full px-3 py-2 border border-gray-300 rounded-xl"></div><div class="flex justify-end gap-3 mt-6 pt-4 border-t"><button type="button" class="close-modal-btn px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl">Annulla</button><button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl shadow-lg">Salva Profilo</button></div></form></div></div>
@@ -280,8 +164,8 @@
 
         let db, auth, userId;
         let currentWeekStart = getStartOfWeek(new Date());
-        let allTasks = {}, allFutureDeadlines = [], localCommitments = {}, localStudentInfo = {};
-        let taskUnsubscribe, commitmentUnsubscribe, futureDeadlinesUnsubscribe, studentInfoUnsubscribe;
+        let allTasks = {}, allFutureDeadlines = [], localCommitments = {}, localStudentInfo = {}, allOccasionalCommitments = [];
+        let taskUnsubscribe, commitmentUnsubscribe, futureDeadlinesUnsubscribe, studentInfoUnsubscribe, occasionalUnsubscribe;
         let currentAiChatHistory = [], currentAiTaskId = null, currentAiPlannerChatHistory = [], confirmCallback = null, progressChartInstance = null;
         let currentImageBase64 = null;
 
@@ -362,7 +246,7 @@
             document.getElementById('loadingSpinner').style.display = 'none'; 
             document.getElementById('weekGrid').classList.remove('hidden');
             setupTimetableModal(); setupCommitmentsModal();
-            attachTaskListener(); attachCommitmentListener(); attachFutureDeadlinesListener(); attachStudentInfoListener();
+            attachTaskListener(); attachCommitmentListener(); attachFutureDeadlinesListener(); attachStudentInfoListener(); attachOccasionalListener();
             renderWeekDisplay(currentWeekStart);
         }
 
@@ -378,6 +262,16 @@
             commitmentUnsubscribe = onSnapshot(doc(db, "artifacts", appId, "users", userId, "data", "commitments"), (snap) => {
                 localCommitments = snap.exists() ? snap.data() : {};
                 Object.keys(dayNames).forEach(k => { const i = document.getElementById(`commitment-${k}`); if(i) i.value = localCommitments[k] || ''; });
+                renderWeekDisplay(currentWeekStart);
+            });
+        }
+        function attachOccasionalListener() {
+            if (occasionalUnsubscribe) occasionalUnsubscribe();
+            occasionalUnsubscribe = onSnapshot(collection(db, "artifacts", appId, "users", userId, "occasional_commitments"), (snap) => {
+                allOccasionalCommitments = [];
+                snap.forEach(d => allOccasionalCommitments.push({ id: d.id, ...d.data() }));
+                allOccasionalCommitments.sort((a, b) => new Date(a.date) - new Date(b.date));
+                renderOccasionalList();
                 renderWeekDisplay(currentWeekStart);
             });
         }
@@ -423,6 +317,13 @@
                 const addTaskButton = isWeekend ? '' : `<button class="add-task-btn p-1.5 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition" data-date="${dateStr}" data-daykey="${dayKey}"><span data-lucide="plus" class="w-5 h-5"></span></button>`;
                 const timeHtml = isWeekend ? '-' : generateTimetableHTML(dayKey);
 
+                // Get occasional commitments for this day
+                const dailyOccasional = allOccasionalCommitments.filter(o => o.date === dateStr);
+                let occasionalHtml = '';
+                if (dailyOccasional.length > 0) {
+                    occasionalHtml = dailyOccasional.map(o => `<div class="mt-1 pt-1 border-t border-green-200 text-orange-600 font-bold">🔸 ${o.description}</div>`).join('');
+                }
+
                 div.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-lg font-bold ${isToday ? 'text-blue-700' : 'text-gray-800'}">${day.name}</h2>
@@ -430,7 +331,7 @@
                     </div>
                     <div class="radar-container mb-3 space-y-1">${generateRadarHTML(day.date)}</div>
                     <div class="mb-3"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Orario</div><div class="bg-gray-50 p-2 rounded-lg text-xs text-gray-700 leading-relaxed">${timeHtml}</div></div>
-                    <div class="mb-3"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Impegni</div><div class="bg-green-50 p-2 rounded-lg text-xs text-green-800 font-medium">${localCommitments[dayKey] || 'Nessuno'}</div></div>
+                    <div class="mb-3"><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Impegni</div><div class="bg-green-50 p-2 rounded-lg text-xs text-green-800 font-medium">${localCommitments[dayKey] || 'Nessuno'} ${occasionalHtml}</div></div>
                     <hr class="border-gray-100 my-2">
                     <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-gray-700">Compiti</h3>${addTaskButton}</div>
                     <div id="task-list-${dateStr}" class="flex-1 space-y-2 overflow-y-auto"></div>`;
@@ -494,6 +395,17 @@
             l.querySelectorAll('.del-future').forEach(b => b.addEventListener('click', () => handleDeleteFutureDeadline(b.dataset.id)));
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+
+        function renderOccasionalList() {
+            const l = document.getElementById('occasionalList');
+            l.innerHTML = allOccasionalCommitments.map(d => {
+                const parts = d.date.split('-');
+                const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+                return `<div class="flex justify-between items-center p-2 bg-gray-50 rounded-lg border mb-2"><div><p class="font-bold text-sm">${d.description}</p><p class="text-xs text-gray-500">${dateObj.toLocaleDateString()}</p></div><button class="del-occ p-2 text-red-500" data-id="${d.id}"><span data-lucide="trash-2" class="w-4 h-4"></span></button></div>`;
+            }).join('') || '<p class="text-center text-gray-400 py-4">Nessuno</p>';
+            l.querySelectorAll('.del-occ').forEach(b => b.addEventListener('click', () => handleDeleteOccasional(b.dataset.id)));
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
         
         function renderNotificationBanner() {
             const today = new Date(); today.setHours(0,0,0,0);
@@ -553,6 +465,12 @@
             document.getElementById('futureDeadlineForm').reset();
         }
         async function handleDeleteFutureDeadline(id) { confirmCallback = async () => await deleteDoc(doc(db, "artifacts", appId, "users", userId, "future_deadlines", id)); openModal(document.getElementById('confirmModal')); }
+        async function handleSaveOccasional(e) {
+            e.preventDefault(); if (!userId) return;
+            await addDoc(collection(db, "artifacts", appId, "users", userId, "occasional_commitments"), { description: document.getElementById('occDescription').value, date: document.getElementById('occDate').value });
+            document.getElementById('occasionalForm').reset();
+        }
+        async function handleDeleteOccasional(id) { confirmCallback = async () => await deleteDoc(doc(db, "artifacts", appId, "users", userId, "occasional_commitments", id)); openModal(document.getElementById('confirmModal')); }
         async function handleSaveCommitments(e) {
             e.preventDefault(); if (!userId) return;
             const data = {}; Object.keys(dayNames).forEach(k => data[k] = document.getElementById(`commitment-${k}`).value.trim());
@@ -606,9 +524,6 @@
                 - Descrizione: ${t.description}
                 Basandoti su informazioni aggiornate (usa la ricerca Google), dammi una brevissima spiegazione (massimo 2 frasi) dell'argomento principale e 3 consigli pratici e concisi per svolgerlo al meglio. Formatta la risposta in HTML semplice (paragrafi e liste).`;
                 
-                // Salva il prompt iniziale nella cronologia come messaggio utente (invisibile) o visibile se preferisci
-                // Per coerenza con l'interfaccia chat, lo aggiungiamo alla history ma non lo renderizziamo necessariamente se vogliamo che sembri che l'AI inizi.
-                // Ma per la persistence e per inviarlo a Gemini, DEVE essere nella history.
                 const initialMessage = { role: "user", parts: [{ text: prompt }] };
                 currentAiChatHistory.push(initialMessage);
                 
@@ -644,17 +559,14 @@
             
             i.value = ''; 
             
-            // Render user message with optional image
             renderAiChatMessage("user", t, false, currentImageBase64 ? `data:image/jpeg;base64,${currentImageBase64}` : null);
             
-            // Add to history
             const userParts = [{ text: t || "Analizza questa immagine" }];
             if(currentImageBase64) {
                 userParts.push({ inlineData: { mimeType: "image/jpeg", data: currentImageBase64 } });
             }
             currentAiChatHistory.push({ role: "user", parts: userParts });
             
-            // Clear image state
             currentImageBase64 = null;
             document.getElementById('aiChatImagePreviewWrapper').classList.add('hidden');
             document.getElementById('aiChatFileInput').value = '';
@@ -665,16 +577,15 @@
         
         async function callGeminiChatApi(search) {
             const apiKey = "AIzaSyDnrW-1uba9UTTyKJoGctm8eW8F5lSXmtE"; 
-            const info = localStudentInfo; const sys = `Agisci come tutor per ${info.name||'studente'} (${info.classRoom||'?'}). Usa HTML semplice.`;
+            const info = localStudentInfo; 
+            const sys = `Agisci come tutor per ${info.name||'studente'} (${info.classRoom||'?'}). Usa HTML semplice.`;
             try { 
                 const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { 
                     method: 'POST', 
                     headers: {'Content-Type':'application/json'}, 
                     body: JSON.stringify({ 
                         contents: currentAiChatHistory, 
-                        // tools: search?[{"google_search":{}}]:[], // Disabilita tools se immagine presente per sicurezza in questa versione preview, oppure gestisci meglio
-                        // Per semplicità, usiamo search solo se NON c'è immagine nel turno corrente, o sempre.
-                        // Gemini Flash supporta immagini, ma Google Search tool + immagini a volte confligge. Proviamo senza search se c'è inlineData.
+                        // tools: search?[{"google_search":{}}]:[], 
                         systemInstruction: {parts:[{text:sys}]} 
                     }) 
                 }); 
@@ -683,7 +594,6 @@
                 removeAiChatLoading(); 
                 if(txt) { 
                     renderAiChatMessage("model", txt); 
-                    // Store only text response in history
                     currentAiChatHistory.push({ role: "model", parts: [{ text: txt }] }); 
                     await updateDoc(doc(db, "artifacts", appId, "users", userId, "tasks", currentAiTaskId), { aiChatHistory: currentAiChatHistory }); 
                 } 
@@ -704,7 +614,7 @@
         }
         function removeAiChatLoading() { const l = document.getElementById('ai-loading-bubble'); if(l) l.remove(); }
         
-        // Planner logic (invariata)
+        // Planner logic
         async function handleOpenAiPlanner() {
             openModal(document.getElementById('aiPlannerModal'));
             const el = document.getElementById('aiPlannerChatHistory'); el.innerHTML = ''; currentAiPlannerChatHistory = [];
@@ -712,12 +622,11 @@
             const today = new Date(); const start = getStartOfWeek(currentWeekStart); const end = new Date(start); end.setDate(start.getDate()+10);
             const tasks = Object.values(allTasks).filter(t => { const d = new Date(t.dueDate+'T00:00:00'); return !t.completed && d >= today && d <= end; });
             
-            // Calcola giorni validi (fix per bug 'oggi è lunedì')
             const dayIndex = today.getDay();
             const dMap = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
             let validDays = (dayIndex>=1 && dayIndex<=5) ? dMap.slice(dayIndex,6) : [dMap[dayIndex]];
             
-            const prompt = `Tutor ${localStudentInfo.name||''} (${localStudentInfo.classRoom||''}). Oggi: ${today.toLocaleDateString()}. Pianifica SOLO: ${validDays.join(', ')}. Orario: ${JSON.stringify(timetable)}. Impegni: ${JSON.stringify(localCommitments)}. Scadenze: ${JSON.stringify(allFutureDeadlines)}. Compiti: ${JSON.stringify(tasks)}. Regola: scadenza X -> fare X-1. HTML semplice.`;
+            const prompt = `Tutor ${localStudentInfo.name||''} (${localStudentInfo.classRoom||''}). Oggi: ${today.toLocaleDateString()}. Pianifica SOLO: ${validDays.join(', ')}. Orario: ${JSON.stringify(timetable)}. Impegni Fissi: ${JSON.stringify(localCommitments)}. IMPEGNI OCCASIONALI (Date specifiche): ${JSON.stringify(allOccasionalCommitments)}. Scadenze: ${JSON.stringify(allFutureDeadlines)}. Compiti: ${JSON.stringify(tasks)}. Regola: scadenza X -> fare X-1. Considera sia gli impegni settimanali fissi che quelli occasionali per la data specifica. HTML semplice.`;
             currentAiPlannerChatHistory.push({ role: "user", parts: [{ text: prompt }] });
             callGeminiPlannerChatApi();
         }
@@ -752,8 +661,23 @@
             document.getElementById('openProgressButton').onclick = handleOpenProgressModal;
             document.getElementById('openStudentInfoButton').onclick = () => openModal(document.getElementById('studentInfoModal'));
 
+            // Tab handling
+            document.getElementById('tabWeekly').onclick = () => {
+                document.getElementById('contentWeekly').classList.remove('hidden');
+                document.getElementById('contentOccasional').classList.add('hidden');
+                document.getElementById('tabWeekly').className = 'flex-1 py-2 text-sm font-medium tab-active';
+                document.getElementById('tabOccasional').className = 'flex-1 py-2 text-sm font-medium tab-inactive';
+            };
+            document.getElementById('tabOccasional').onclick = () => {
+                document.getElementById('contentWeekly').classList.add('hidden');
+                document.getElementById('contentOccasional').classList.remove('hidden');
+                document.getElementById('tabWeekly').className = 'flex-1 py-2 text-sm font-medium tab-inactive';
+                document.getElementById('tabOccasional').className = 'flex-1 py-2 text-sm font-medium tab-active';
+            };
+
             document.getElementById('taskForm').onsubmit = handleSaveTask;
             document.getElementById('commitmentsForm').onsubmit = handleSaveCommitments;
+            document.getElementById('occasionalForm').onsubmit = handleSaveOccasional;
             document.getElementById('futureDeadlineForm').onsubmit = handleSaveFutureDeadline;
             document.getElementById('aiChatForm').onsubmit = handleAiChatSubmit;
             document.getElementById('aiPlannerChatForm').onsubmit = handleAiPlannerChatSubmit;
