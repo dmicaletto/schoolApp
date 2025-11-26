@@ -235,12 +235,25 @@
             try {
                 const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); setLogLevel('error');
                 onAuthStateChanged(auth, async (user) => {
-                    if (user) { userId = user.uid; await loadAllUserData(); } 
+                    if (user) { 
+                        // Usa ID stabile
+                        userId = getStableUserId(user); 
+                        await loadAllUserData(); 
+                    } 
                     else { if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken); else await signInAnonymously(auth); }
                 });
             } catch (e) { alert("Err: " + e.message); }
         }
-
+        // --- FUNZIONE ID STABILE ---
+        function getStableUserId(firebaseUser) {
+            const STORAGE_KEY = 'bacheca_user_id_v1';
+            let stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) return stored;
+            
+            stored = firebaseUser.uid;
+            localStorage.setItem(STORAGE_KEY, stored);
+            return stored;
+        }
         async function loadAllUserData() {
             if (!userId) return;
             document.getElementById('loadingSpinner').style.display = 'none'; 
